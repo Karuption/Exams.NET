@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import authService from './api-authorization/AuthorizeService'
 
 export class FetchData extends Component {
-  static displayName = FetchData.name;
+  static displayName= FetchData.name;
 
   constructor(props) {
     super(props);
