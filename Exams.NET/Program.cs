@@ -30,6 +30,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<TestMapper>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -62,6 +64,7 @@ app.MapFallbackToFile("index.html");
 
 using (var scope = app.Services.CreateScope()) {
     scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<TestAdministrationContext>().Database.Migrate();
     scope.ServiceProvider.GetRequiredService<TestAdministrationContext>().Database.EnsureCreated();
 }
 

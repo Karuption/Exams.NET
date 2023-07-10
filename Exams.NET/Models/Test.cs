@@ -4,11 +4,20 @@ using Microsoft.EntityFrameworkCore;
 namespace Exams.NET.Models; 
 
 public class Test {
-    public int TestID { get; set; }
-    public string UserID { get; set; }
+    public int TestId { get; set; }
+    public string UserId { get; set; }
     public string TestTitle { get; set; } = "";
     public DateTime Created { get; set; }
     public DateTime LastUpdated { get; set; }
+    public IList<TestQuestion>? Problems { get; set; }
+}
+
+public class TestDto {
+    public int? TestId { get; set; }
+    public string? UserId { get; set; }
+    public string TestTitle { get; set; } = "";
+    public DateTime? Created { get; set; }
+    public DateTime? LastUpdated { get; set; }
     public IList<TestQuestion>? Problems { get; set; }
 }
 
