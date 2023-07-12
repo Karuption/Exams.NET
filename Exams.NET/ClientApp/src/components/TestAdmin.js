@@ -86,7 +86,7 @@ export const TestAdmin = () => {
 
 function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
     const [testForm, setTestForm] = useState(editTest);
-    const [submittable, setSubmittable] = useState(true);
+    const [submitBlock, setSubmitBlock] = useState(true);
     const [editing,setEditing] = useState(Object.keys(editTest).length === 0);
     
     useEffect(()=> {
@@ -97,6 +97,14 @@ function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
             setTestForm(editTest);
             setEditing(true);
         }}, [editTest]);
+
+    useEffect(()=>{
+        const notChanged = Object.values(testForm).every((value, index) => value === Object.values(editTest)[index]);
+        if(notChanged    || testForm.testTitle === ""){
+            setSubmitBlock(true);
+        } else
+            setSubmitBlock(false);
+    },[testForm,editTest])
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -112,9 +120,6 @@ function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
         event.preventDefault();
         const {name, value} = event.target;
         setTestForm({...testForm, [name]: value});
-        
-        if(name === "testTitle")
-            setSubmittable(value==="");
     }
     
     const submitNewTest= async (prop) => {
@@ -161,7 +166,7 @@ function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
                                        value={testForm.testTitle}/>
                             </Col>
                         </FormGroup>
-                        <button className={"btn btn-primary text-center"} disabled={submittable}>
+                        <button className={"btn btn-primary text-center"} disabled={submitBlock}>
                             Submit
                         </button>
                     </Form>
