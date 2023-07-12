@@ -1,10 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import authService from './api-authorization/AuthorizeService'
 import {Button, Col, Form, FormGroup, Input, Label, Modal, ModalBody, ModalHeader} from "reactstrap";
-import {json} from "react-router-dom";
 
 export const TestAdmin = () => {
-    const displayName= TestAdmin.name;
     const [tests, setTests] = useState([])
     const [loading, setLoading] = useState(true);
     const [selectedTest, setSelectedTest] = useState({});
@@ -61,7 +59,7 @@ export const TestAdmin = () => {
 
     async function populateTests() {
         const token = await authService.getAccessToken();
-        const response = await fetch('api/admin/test', {
+        await fetch('api/admin/test', {
             headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
         }).then(res => {
             if(!res.ok) {
@@ -76,11 +74,10 @@ export const TestAdmin = () => {
 
 
     async function deleteTest( testId ) {
-        console.log(testId);
         const token = await authService.getAccessToken();
         await fetch(`api/admin/Test/${testId}`, {
             method : "DELETE",
-            headers: !token?{}:{'Authorize' : `Bearer ${token}`}
+            headers: !token?{}:{'Authorization' : `Bearer ${token}`}
         })
             .then(res => res.ok&&populateTests())
             .catch(err => console.log(err));

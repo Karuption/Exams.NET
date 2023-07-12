@@ -4,5 +4,5 @@ namespace Exams.NET.Models;
 
 [Mapper]
 public partial class TestMapper {
-    public partial Test DtoToEntity(TestDto test);
+    public partial Test DtoToEntity(TestCreationDto testCreation);
 }

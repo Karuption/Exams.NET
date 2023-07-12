@@ -12,7 +12,7 @@ public class Test {
     public IList<TestQuestion>? Problems { get; set; }
 }
 
-public class TestDto {
+public class TestCreationDto {
     public int? TestId { get; set; }
     public string? UserId { get; set; }
     public string TestTitle { get; set; } = "";

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Duende.IdentityServer;
 using Exams.NET.Data;
 using Exams.NET.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Exams.NET.Controllers.Modification; 
 
-
+[Authorize]
 [ApiController]
 [Route("api/admin/[controller]")]
 public class TestController : ControllerBase {
@@ -26,7 +25,7 @@ public class TestController : ControllerBase {
         if (_testContext?.Tests == null)
             return NotFound();
 
-        var tests = _testContext.Tests;
+        var tests = _testContext.Tests.Where(x=> x.UserId == GetCurrentUserId());
 
         if (tests.Any())
             return await tests.ToListAsync();
@@ -39,7 +38,7 @@ public class TestController : ControllerBase {
     public async Task<ActionResult<Test>> GetTest(int id) {
         if (_testContext.Tests == null)
             return NotFound();
-        var test = await _testContext.Tests.FindAsync(id);
+        var test = await _testContext.Tests.FirstOrDefaultAsync(x=>x.UserId == GetCurrentUserId() && x.TestId == id);
 
         if (test == null)
             return NotFound();
@@ -54,8 +53,14 @@ public class TestController : ControllerBase {
         if (id != test.TestId)
             return BadRequest();
 
-        _testContext.Entry(test).State = EntityState.Modified;
+        var orig = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==test.TestId && 
+                                                                   x.UserId==GetCurrentUserId());
+        if (orig == null)
+            return NotFound();
 
+        test.LastUpdated = DateTime.UtcNow;
+        _testContext.Entry(orig).CurrentValues.SetValues(test);
+        
         try {
             await _testContext.SaveChangesAsync();
         }
@@ -76,25 +81,26 @@ public class TestController : ControllerBase {
     // POST: api/Tests
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<Test>> PostTest(TestDto test) {
-        if (_testContext.Tests == null)
+    public async Task<ActionResult<Test>> PostTest(TestCreationDto testCreation) {
+        if (_testContext?.Tests == null)
             return Problem("Entity set 'TestAdministrationContext.Tests'  is null.");
+
+        testCreation.UserId = GetCurrentUserId();
+        testCreation.LastUpdated = testCreation.Created = DateTime.UtcNow;
         
-        test.UserId = HttpContext.User.Claims.FirstOrDefault(x=>x.Type==ClaimTypes.NameIdentifier)!.Value;
-        test.LastUpdated = test.Created = DateTime.UtcNow;
-        
-        _testContext.Tests.Add(_testMapper.DtoToEntity(test));
+        _testContext.Tests.Add(_testMapper.DtoToEntity(testCreation));
         await _testContext.SaveChangesAsync();
 
-        return CreatedAtAction("GetTest", new { id = test.TestId }, test);
+        return CreatedAtAction("GetTest", new { id = testCreation.TestId }, testCreation);
     }
 
     // DELETE: api/Tests/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTest(int id) {
-        if (_testContext.Tests == null)
+        if (_testContext?.Tests == null)
             return NotFound();
-        var test = await _testContext.Tests.FindAsync(id);
+        var test = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==id 
+                                                                    && x.UserId == GetCurrentUserId());
         if (test == null)
             return NotFound();
 
@@ -106,5 +112,8 @@ public class TestController : ControllerBase {
 
     private bool TestExists(int id) {
         return (_testContext.Tests?.Any(e => e.TestId == id)).GetValueOrDefault();
+    }
+    private string GetCurrentUserId() {
+        return HttpContext.User.Claims.FirstOrDefault(c=>c.Type == ClaimTypes.NameIdentifier)?.Value ?? "";
     }
 }
