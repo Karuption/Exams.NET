@@ -7,6 +7,7 @@ public class Test {
     public int TestId { get; set; }
     public string UserId { get; set; }
     public string TestTitle { get; set; } = "";
+    public string TestDescription { get; set; } = "";
     public DateTime Created { get; set; }
     public DateTime LastUpdated { get; set; }
     public IList<TestQuestion>? Problems { get; set; }
@@ -16,6 +17,7 @@ public class TestCreationDto {
     public int? TestId { get; set; }
     public string? UserId { get; set; }
     public string TestTitle { get; set; } = "";
+    public string? TestDescription { get; set; } = "";
     public DateTime? Created { get; set; }
     public DateTime? LastUpdated { get; set; }
     public IList<TestQuestion>? Problems { get; set; }

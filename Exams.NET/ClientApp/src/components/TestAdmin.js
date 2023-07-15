@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import authService from './api-authorization/AuthorizeService'
-import {Button, Col, Form, FormGroup, Input, Label, Modal, ModalBody, ModalHeader} from "reactstrap";
+import {Button, Col, Form, FormGroup, Input, Label, Modal, ModalBody, ModalHeader, Row} from "reactstrap";
 
 export const TestAdmin = () => {
     const [tests, setTests] = useState([])
@@ -37,6 +37,7 @@ export const TestAdmin = () => {
                 <thead>
                 <tr>
                     <th>Test name</th>
+                    <th>Description</th>
                     <th>Created</th>
                     <th>Updated</th>
                     <th>Actions</th>
@@ -46,6 +47,7 @@ export const TestAdmin = () => {
                 {tests.map(test =>
                     <tr key={test.testId}>
                         <td>{test.testTitle}</td>
+                        <td>{test.testDescription}</td>
                         <td>{test.created}</td>
                         <td>{test.lastUpdated}</td>
                         <td><Button onClick={() => {editTest(test);}}>Edit</Button></td>
@@ -91,7 +93,7 @@ function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
     
     useEffect(()=> {
         if (editTest===null || Object.keys(editTest).length === 0) {
-            setTestForm({testTitle: ""});
+            setTestForm({testTitle: "", testDescription: ""});
             setEditing(false);
         }else {
             setTestForm(editTest);
@@ -157,14 +159,23 @@ function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
                 <ModalBody>
                     <Form onSubmit={handleSubmit}>
                         <FormGroup id={"test"} row>
-                            <Col>
+                            <Row>
                                 <Label htmlFor={"testTitle"} placeholder={"Test Name"} hidden={true}>TestTitle</Label>
                                 <Input id={"testTitle"} 
                                        name={"testTitle"} 
                                        onChange={handleFormChanges} 
                                        placeholder={"Test Title"} 
                                        value={testForm.testTitle}/>
-                            </Col>
+                            </Row>
+                            <Row>
+                                <Label htmlFor={"testDescription"} placeholder={"Description"} hidden={true}>testDescription</Label>
+                                <Input id={"testDescription"}
+                                       name={"testDescription"}
+                                       onChange={handleFormChanges}
+                                       placeholder={"Description"}
+                                       type={"textarea"}
+                                       value={testForm.testDescription} />
+                            </Row>
                         </FormGroup>
                         <button className={"btn btn-primary text-center"} disabled={submitBlock}>
                             Submit
