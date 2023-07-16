@@ -9,4 +9,17 @@ public class TestAdministrationContext : DbContext {
 
     public DbSet<Test> Tests { get; set; }
     public DbSet<TestQuestion> TestQuestions { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder) {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<TestQuestion>()
+                    .HasKey(x => x.TestQuestionId);
+        
+        modelBuilder.Entity<TestQuestion>()
+                    .ToTable("Test Questions")
+                    .HasDiscriminator<string>(nameof(TestQuestion) + "type")
+                    .HasValue<MultipleChoiceProblem>(nameof(MultipleChoiceProblem))
+                    .HasValue<FreeFormProblem>(nameof(FreeFormProblem));
+    }
 }
