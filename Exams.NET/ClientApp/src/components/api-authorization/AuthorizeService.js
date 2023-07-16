@@ -15,7 +15,7 @@ export class AuthorizeService {
     const user = await this.getUser();
     return !!user;
   }
-
+  
   async getUser() {
     if (this._user && this._user.profile) {
       return this._user.profile;
@@ -29,7 +29,15 @@ export class AuthorizeService {
   async getAccessToken() {
     await this.ensureUserManagerInitialized();
     const user = await this.userManager.getUser();
+    if(this.isTokenExpired(user)){
+      await this.signOut();
+      return await this.getAccessToken();
+    }
     return user && user.access_token;
+  }
+
+  isTokenExpired(user) {
+    return new Date(user.expires_at*1000) < Date.now();
   }
 
   // We try to authenticate the user in three different ways:
