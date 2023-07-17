@@ -21,24 +21,26 @@ public class TestController : ControllerBase {
 
     // GET: api/Tests
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Test>>> GetTests() {
+    public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken cancellationToken = default) {
         if (_testContext?.Tests == null)
             return NotFound();
 
-        var tests = _testContext.Tests.Where(x=> x.UserId == GetCurrentUserId());
+        var tests = _testContext.Tests.Where(x=> x.UserId == GetCurrentUserId())
+                                .Include(x=>x.Problems);
 
         if (tests.Any())
-            return await tests.ToListAsync();
+            return await tests.ToListAsync(cancellationToken);
 
         return Array.Empty<Test>();
     }
 
     // GET: api/Tests/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Test>> GetTest(int id) {
-        if (_testContext.Tests == null)
+    public async Task<ActionResult<Test>> GetTest(int id, CancellationToken cancellationToken = default) {
+        if (_testContext?.Tests == null)
             return NotFound();
-        var test = await _testContext.Tests.FirstOrDefaultAsync(x=>x.UserId == GetCurrentUserId() && x.TestId == id);
+        var test = await _testContext.Tests.Include(x=>x.Problems)
+                                     .FirstOrDefaultAsync(x=>x.UserId == GetCurrentUserId() && x.TestId == id, cancellationToken: cancellationToken);
 
         if (test == null)
             return NotFound();
@@ -49,12 +51,12 @@ public class TestController : ControllerBase {
     // PUT: api/Tests/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTest(int id, Test test) {
+    public async Task<IActionResult> PutTest(int id, Test test, CancellationToken cancellationToken = default) {
         if (id != test.TestId)
             return BadRequest();
 
         var orig = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==test.TestId && 
-                                                                   x.UserId==GetCurrentUserId());
+                                                                   x.UserId==GetCurrentUserId(), cancellationToken: cancellationToken);
         if (orig == null)
             return NotFound();
 
@@ -62,7 +64,7 @@ public class TestController : ControllerBase {
         _testContext.Entry(orig).CurrentValues.SetValues(test);
         
         try {
-            await _testContext.SaveChangesAsync();
+            await _testContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException) {
             if (!TestExists(id))
@@ -74,38 +76,38 @@ public class TestController : ControllerBase {
     }
     
     [HttpPut]
-    public async Task<IActionResult> PutTest(Test test) {
-        return await PutTest(test.TestId, test);
+    public async Task<IActionResult> PutTest(Test test, CancellationToken cancellationToken = default) {
+        return await PutTest(test.TestId, test, cancellationToken);
     }
 
     // POST: api/Tests
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<Test>> PostTest(TestCreationDto testCreation) {
+    public async Task<ActionResult<Test>> PostTest(TestCreationDto testCreation, CancellationToken cancellationToken = default) {
         if (_testContext?.Tests == null)
             return Problem("Entity set 'TestAdministrationContext.Tests'  is null.");
 
         testCreation.UserId = GetCurrentUserId();
         testCreation.LastUpdated = testCreation.Created = DateTime.UtcNow;
         
-        _testContext.Tests.Add(_testMapper.DtoToEntity(testCreation));
-        await _testContext.SaveChangesAsync();
+        await _testContext.Tests.AddAsync(_testMapper.DtoToEntity(testCreation), cancellationToken);
+        await _testContext.SaveChangesAsync(cancellationToken);
 
         return CreatedAtAction("GetTest", new { id = testCreation.TestId }, testCreation);
     }
 
     // DELETE: api/Tests/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTest(int id) {
+    public async Task<IActionResult> DeleteTest(int id, CancellationToken cancellationToken = default) {
         if (_testContext?.Tests == null)
             return NotFound();
         var test = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==id 
-                                                                    && x.UserId == GetCurrentUserId());
+                                                                    && x.UserId == GetCurrentUserId(), cancellationToken: cancellationToken);
         if (test == null)
             return NotFound();
 
         _testContext.Tests.Remove(test);
-        await _testContext.SaveChangesAsync();
+        await _testContext.SaveChangesAsync(cancellationToken);
 
         return NoContent();
     }
