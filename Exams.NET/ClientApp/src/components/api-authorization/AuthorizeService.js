@@ -31,7 +31,8 @@ export class AuthorizeService {
     const user = await this.userManager.getUser();
     if(this.isTokenExpired(user)){
       await this.signOut();
-      return await this.getAccessToken();
+      this.redirect();
+      return {};
     }
     return user && user.access_token;
   }
@@ -116,7 +117,7 @@ export class AuthorizeService {
     } catch (popupSignOutError) {
       console.log("Popup signout error: ", popupSignOutError);
       try {
-        await this.userManager.signoutRedirect(this.createArguments(state));
+        await this.userManager.signinPopup();
         return this.redirect();
       } catch (redirectSignOutError) {
         console.log("Redirect signout error: ", redirectSignOutError);

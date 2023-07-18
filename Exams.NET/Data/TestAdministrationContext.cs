@@ -21,5 +21,11 @@ public class TestAdministrationContext : DbContext {
                     .HasDiscriminator<string>(nameof(TestQuestion) + "type")
                     .HasValue<MultipleChoiceProblem>(nameof(MultipleChoiceProblem))
                     .HasValue<FreeFormProblem>(nameof(FreeFormProblem));
+
+        modelBuilder.Entity<MultipleChoiceProblem>()
+                    .HasMany<Choice>()
+                    .WithOne(e => e.TestQuestion as MultipleChoiceProblem)
+                    .HasForeignKey(x => x.TestQuestionID)
+                    .HasPrincipalKey(e=>e.TestQuestionId);
     }
 }
