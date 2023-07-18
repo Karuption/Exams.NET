@@ -2,37 +2,40 @@ import { Button, Col, Form, FormGroup, Input, Label, Row } from "reactstrap";
 import {useEffect, useState} from "react";
 import authService from "./api-authorization/AuthorizeService";
 
-const MultipleChoice = ({choices, handleOptionChange}) => {
+const MultipleChoice = ({choices, handleChoiceChange, maxPointValue}) => {
     const alphabet = Array.from({length: 26}, (_,i) => String.fromCharCode(65 + i));
     const [allowAdd, setAllowAdd] = useState(true);
     
     return (
         <div>
-            { choices.map((option, index) => (
+            { choices.map((choice, index) => (
                 <Row key={index}>
                     <Col md={2}>
                         <FormGroup floating={true}>
-                            <Input id={"choicePointValue "+index+1} 
+                            <Input id={"choicePointValue " + index + 1} 
                                    name={"choicePointValue"} 
                                    type={"number"} 
-                                   min={0}/>
-                            <Label for={"choicePointValue "+index+1}>{alphabet[index]} Point Value</Label>
+                                   min={0} 
+                                   onChange={(e)=>handleChoiceChange(e, index)}/>
+                            <Label for={"choicePointValue " + index + 1}>{alphabet[index]} Point Value</Label>
                         </FormGroup>
                     </Col>
                     <Col>
                         <FormGroup floating={true}>
                             <Input
-                                id={"Description "+index+1}
+                                id={"Description " + index + 1}
                                 name={"description"}
-                                onChange={(e)=>{handleOptionChange(e, index)}}
+                                onChange={(e)=>{handleChoiceChange(e, index)}}
                                 type="text"
                                 bsSize="sm" />
-                            <Label for={"Description "+index+1}>Choice {alphabet[index]}</Label>
+                            <Label for={"Description " + index + 1}>Choice {alphabet[index]}</Label>
                         </FormGroup>
                     </Col>    
                 </Row>
             ))}
-            <Button disabled={!allowAdd} onClick={(e)=>handleOptionChange(null, choices.length)} className={"btn btn-primary"}>Add Choice</Button>
+            <Button disabled={!allowAdd} 
+                    onClick={(e)=>handleChoiceChange(null, choices.length)} 
+                    className={"btn btn-primary"}>Add Choice</Button>
         </div>
     );
 };
@@ -46,8 +49,7 @@ const FreeFormQuestion = ({answer, handleAnswerChange}) => {
                 type="text"
                 bsSize="sm"
                 value={answer}
-                onChange={handleAnswerChange}
-            />
+                onChange={handleAnswerChange} />
             <Label for="answer">Answer</Label>
         </FormGroup>
     );
@@ -72,7 +74,7 @@ export default function QuestionForm() {
         setQuestion({...question, [name]: value});
     }
 
-    const handleOptionChange = (event, index) => {
+    const handleMultipleChoiceChanges = (event, index) => {
         const newChoices = [...choices];
         if(event) {
             const {name, value} = event.target;
@@ -82,7 +84,7 @@ export default function QuestionForm() {
         setChoices(newChoices);
     }
 
-    const handleFFChange = (event) => {
+    const handleFreeFormChanges = (event) => {
         event.preventDefault();
         setFFAnswer(event.target.value);
     }
@@ -95,12 +97,12 @@ export default function QuestionForm() {
         } else {
             submitQuestion = {...submitQuestion, answer: ffAnswer}
         }
-        if(!submitQuestion.TestQuestionId)
-            await submitNewQuestion(submitQuestion);
-        else 
+        if(submitQuestion.TestQuestionId)
             await submitEditQuestion(submitQuestion);
+        else 
+            await submitNewQuestion(submitQuestion);
     }
-    const submitNewQuestion= async (prop) => {
+    const submitNewQuestion = async (prop) => {
         const token = await authService.getAccessToken();
         await fetch('api/admin/Question', {
             method : "POST",
@@ -167,8 +169,8 @@ export default function QuestionForm() {
                 </Label>
             </FormGroup>
             {questionType==="Multiple Choice"
-                ? <MultipleChoice choices={choices} handleOptionChange={handleOptionChange}/>
-                : <FreeFormQuestion answer={ffAnswer} handleAnswerChange={handleFFChange}/>}
+                ? <MultipleChoice choices={choices} handleChoiceChange={handleMultipleChoiceChanges} maxPointValue={question.totalPointValue} />
+                : <FreeFormQuestion answer={ffAnswer} handleAnswerChange={handleFreeFormChanges}/>}
             <Button className={"btn btn-primary"} disabled={!submittable}>OK</Button>
         </Form>
     );
