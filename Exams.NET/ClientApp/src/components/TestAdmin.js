@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import authService from './api-authorization/AuthorizeService'
-import {Button} from "reactstrap";
+import {Button, CloseButton} from "reactstrap";
 import TestForm from "./TestAdminForm";
+import { FaEdit } from 'react-icons/fa';
 
 export default function TestAdmin() {
     const [tests, setTests] = useState([])
@@ -32,7 +33,8 @@ export default function TestAdmin() {
         </div>
     );
     function TestAdminTable(tests, editTest, deleteTest) {
-        return (<div>
+        return (
+        <div>
             <table className="table table-striped" aria-labelledby="tableLabel">
                 <thead>
                 <tr>
@@ -40,20 +42,26 @@ export default function TestAdmin() {
                     <th>Description</th>
                     <th>Created</th>
                     <th>Updated</th>
-                    <th>Actions</th>
+                    <th className="d-flex align-items-center justify-content-end" style={{paddingRight: 12}}>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                {tests.map(test =>
-                    <tr key={test.testId}>
-                        <td>{test.testTitle}</td>
-                        <td>{test.testDescription}</td>
-                        <td>{test.created}</td>
-                        <td>{test.lastUpdated}</td>
-                        <td><Button onClick={() => {editTest(test);}}>Edit</Button></td>
-                        <td><Button onClick={() => deleteTest(test.testId)}>Delete</Button></td>
-                    </tr>
-                )}
+                {
+                    Array.isArray(tests) && tests.map(test =>
+                    <tr key={test.testId} className={"align-middle"}>
+                            <td>{test.testTitle}</td>
+                            <td>{test.testDescription}</td>
+                            <td>{test.created}</td>
+                            <td>{test.lastUpdated}</td>
+                            <td className="d-flex align-items-center justify-content-end">
+                                <Button color="link" style={{paddingTop: '0', marginRight: 0}} onClick={() => editTest(test)}>
+                                    <FaEdit style={{fontSize: 22}} />
+                                </Button>
+                                <CloseButton close onClick={() => deleteTest(test.testId)}/>
+                            </td>
+                        </tr>
+                    )
+                }
                 </tbody>
             </table>
         </div>);
