@@ -1,12 +1,14 @@
 import {useEffect, useState} from "react";
-import {Form, FormGroup, Input, Label, Modal, ModalBody, ModalHeader, Row} from "reactstrap";
+import {Form, FormFeedback, FormGroup, Input, Label, Modal, ModalBody, ModalHeader, Row} from "reactstrap";
 import authService from "./api-authorization/AuthorizeService";
 
 export default function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
     const [testForm, setTestForm] = useState(editTest);
+    const [testFormValidation, setTestFormValidation] = useState({isValidTitle: true, isValidDescription: true, titleError:"", descriptionError:""});
     const [submitBlock, setSubmitBlock] = useState(true);
     const [editing,setEditing] = useState(Object.keys(editTest).length === 0);
 
+    // Test form validation
     useEffect(()=> {
         if (editTest===null || Object.keys(editTest).length === 0) {
             setTestForm({testTitle: "", testDescription: ""});
@@ -23,6 +25,11 @@ export default function TestForm( { ParentCallback, isOpen, toggle, headerText, 
         } else
             setSubmitBlock(false);
     },[testForm,editTest])
+
+    useEffect(() => {
+        if(!testForm.testTitle !== "")
+            setTestFormValidation({...testFormValidation, isValidDescription: false, titleError: "This cannot be empty"});
+    }, [testForm]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -73,24 +80,23 @@ export default function TestForm( { ParentCallback, isOpen, toggle, headerText, 
                 <ModalHeader>{headerText}</ModalHeader>
                 <ModalBody>
                     <Form onSubmit={handleSubmit}>
-                        <FormGroup id={"test"} row>
-                            <Row>
-                                <Label htmlFor={"testTitle"} placeholder={"Test Name"} hidden={true}>TestTitle</Label>
-                                <Input id={"testTitle"}
-                                       name={"testTitle"}
-                                       onChange={handleFormChanges}
-                                       placeholder={"Test Title"}
-                                       value={testForm.testTitle}/>
-                            </Row>
-                            <Row>
-                                <Label htmlFor={"testDescription"} placeholder={"Description"} hidden={true}>testDescription</Label>
-                                <Input id={"testDescription"}
-                                       name={"testDescription"}
-                                       onChange={handleFormChanges}
-                                       placeholder={"Description"}
-                                       type={"textarea"}
-                                       value={testForm.testDescription} />
-                            </Row>
+                        <FormGroup id={"test"} floating={true}>
+                            <Input id={"testTitle"}
+                                   name={"testTitle"}
+                                   invalid={!testFormValidation.isValidTitle}
+                                   onChange={handleFormChanges}
+                                   placeholder={"Test Title"}
+                                   value={testForm.testTitle}/>
+                            <Label for={"testTitle"} >Test Title</Label>
+                            <FormFeedback valid={false}>{testFormValidation.descriptionError}</FormFeedback>
+                        </FormGroup>
+                        <FormGroup floating={true}>
+                            <Input id={"testDescription"}
+                                   name={"testDescription"}
+                                   onChange={handleFormChanges}
+                                   type={"textarea"}
+                                   value={testForm.testDescription} />
+                            <Label for={"testDescription"}>testDescription</Label>
                         </FormGroup>
                         <button className={"btn btn-primary text-center"} disabled={submitBlock}>
                             Submit
