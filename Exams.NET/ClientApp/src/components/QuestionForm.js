@@ -68,18 +68,23 @@ const FreeFormQuestion = ({answer, handleAnswerChange}) => {
     );
 };
 
-export default function QuestionForm() {
+export default function QuestionForm( { editQuestion = {} }) {
     const [submittable, setSubmittable] = useState(true);
     const questionTypes = Object.freeze({
         "MultipleChoice": "Multiple Choice",
         "FreeForm": "Free Form"
     });
-    const [question, setQuestion] = useState({prompt:"", totalPointValue:0});
+    const [question, setQuestion] = useState({prompt:"", totalPointValue:0, ...editQuestion});
     const [questionValidity, setQuestionValidity] = useState({isPromptValid: true, isPointValueValid: true, promptError: "", pointValueError: ""});
     const [questionType, setQuestionType] = useState(questionTypes.MultipleChoice);
     const [choices, setChoices] = useState([{choicePointValue: 0,description:""}]);
     const [ffAnswer, setFFAnswer] = useState("");
     const [multipleChoiceValidity, setMultipleChoiceValidity] = useState([{isPromptValid:true,isPointValueValid:true,descriptionError:"",pointValueError:""}]);
+
+    useEffect(() => {
+        setQuestion({...editQuestion});
+    }, [editQuestion]);
+    
     const handleQuestionTypeChange = (event) => {
         event.preventDefault();
         const type = event.target.value;
@@ -166,7 +171,10 @@ export default function QuestionForm() {
         else 
             submittable = !(ffAnswer !== "");
         
-        submittable = !(!submittable || !questionValidity.isPromptValid || !questionValidity.isPointValueValid);
+        submittable = submittable 
+                && questionValidity.isPromptValid 
+                && questionValidity.isPointValueValid 
+                && (editQuestion !== question);
         setSubmittable(submittable);
     }, [questionValidity, questionType, multipleChoiceValidity]);
 

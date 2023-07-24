@@ -1,14 +1,15 @@
 import {useEffect, useState} from "react";
 import {Form, FormFeedback, FormGroup, Input, Label, Modal, ModalBody, ModalHeader, Row} from "reactstrap";
 import authService from "./api-authorization/AuthorizeService";
+import {FaL} from "react-icons/fa6";
 
-export default function TestForm( { ParentCallback, isOpen, toggle, headerText, editTest } ) {
+export default function TestForm( { ParentCallback, isOpen , toggle , headerText = "Create a new test", editTest } ) {
     const [testForm, setTestForm] = useState(editTest);
     const [testFormValidation, setTestFormValidation] = useState({isValidTitle: true, isValidDescription: true, titleError:"", descriptionError:""});
     const [submitBlock, setSubmitBlock] = useState(true);
     const [editing,setEditing] = useState(Object.keys(editTest).length === 0);
 
-    // Test form validation
+    // Test form editing, if its null/undefined/empty, then we are editing
     useEffect(()=> {
         if (editTest===null || Object.keys(editTest).length === 0) {
             setTestForm({testTitle: "", testDescription: ""});
@@ -18,19 +19,15 @@ export default function TestForm( { ParentCallback, isOpen, toggle, headerText, 
             setEditing(true);
         }}, [editTest]);
 
+    // set submit block and validate the test
     useEffect(()=>{
-        const notChanged = Object.values(testForm).every((value, index) => value === Object.values(editTest)[index]);
-        if(notChanged    || testForm.testTitle === ""){
-            setSubmitBlock(true);
-        } else
-            setSubmitBlock(false);
-    },[testForm,editTest])
-
-    useEffect(() => {
-        if(!testForm.testTitle !== "")
+        if((editing && testForm === editTest) || testForm.testTitle === ""){
             setTestFormValidation({...testFormValidation, isValidDescription: false, titleError: "This cannot be empty"});
-    }, [testForm]);
-
+            return setSubmitBlock(true);
+        }
+        setSubmitBlock(false);
+    },[testForm,editTest, editing])
+    
     const handleSubmit = async (event) => {
         event.preventDefault();
         if(!editing)
