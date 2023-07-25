@@ -8,24 +8,21 @@ public class TestAdministrationContext : DbContext {
         : base(options) { }
 
     public DbSet<Test> Tests { get; set; }
-    public DbSet<TestQuestion> TestQuestions { get; set; }
+    public DbSet<MultipleChoiceProblem> MultipleChoiceQuestions { get; set; }
+    public DbSet<FreeFormProblem> FreeFormQuestions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<TestQuestion>()
-                    .HasKey(x => x.TestQuestionId);
-        
-        modelBuilder.Entity<TestQuestion>()
-                    .ToTable("Test Questions")
-                    .HasDiscriminator<string>(nameof(TestQuestion) + "type")
-                    .HasValue<MultipleChoiceProblem>(nameof(MultipleChoiceProblem))
-                    .HasValue<FreeFormProblem>(nameof(FreeFormProblem));
+        modelBuilder.Entity<MultipleChoiceProblem>()
+                    .ToTable(nameof(MultipleChoiceProblem));
 
         modelBuilder.Entity<MultipleChoiceProblem>()
                     .HasMany<Choice>()
                     .WithOne(e => e.TestQuestion as MultipleChoiceProblem)
-                    .HasForeignKey(x => x.TestQuestionID)
-                    .HasPrincipalKey(e=>e.TestQuestionId);
+                    .HasForeignKey(x => x.TestQuestionID);
+        
+        modelBuilder.Entity<FreeFormProblem>()
+                    .ToTable(nameof(FreeFormProblem));
     }
 }
