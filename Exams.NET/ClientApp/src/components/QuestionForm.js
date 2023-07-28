@@ -69,6 +69,7 @@ const FreeFormQuestion = ({answer, handleAnswerChange}) => {
 };
 
 export default function QuestionForm( { editQuestion = {} }) {
+    let editQCache = editQuestion;
     const [submittable, setSubmittable] = useState(true);
     const questionTypes = Object.freeze({
         "MultipleChoice": "Multiple Choice",
@@ -82,7 +83,8 @@ export default function QuestionForm( { editQuestion = {} }) {
     const [multipleChoiceValidity, setMultipleChoiceValidity] = useState([{isPromptValid:true,isPointValueValid:true,descriptionError:"",pointValueError:""}]);
 
     useEffect(() => {
-        setQuestion({...editQuestion});
+        if(editQCache !== editQuestion)
+            setQuestion({...editQuestion});
     }, [editQuestion]);
     
     const handleQuestionTypeChange = (event) => {
@@ -163,14 +165,16 @@ export default function QuestionForm( { editQuestion = {} }) {
 
     // submittable 
     useEffect(() => {
-        let submittable;
-        
-        if(questionType === questionType.MultipleChoice)
-            submittable = multipleChoiceValidity.every(x=>x.isPointValid&&x.isDescriptionValid) && 
-                choices.some(x=>x.choicePointValue === question.totalPointValue);
-        else 
+        let submittable = false;
+
+        if(questionType === questionTypes.MultipleChoice) {
+            submittable = multipleChoiceValidity.every(x => x.isPointValid && x.isDescriptionValid)
+            submittable &&= choices.some(x => x.choicePointValue === question.totalPointValue);
+        }
+        else {
             submittable = !(ffAnswer !== "");
-        
+        }
+
         submittable = submittable 
                 && questionValidity.isPromptValid 
                 && questionValidity.isPointValueValid 
@@ -181,7 +185,7 @@ export default function QuestionForm( { editQuestion = {} }) {
     const handleSubmit = async (event)=>{
         event.preventDefault();
         let submitQuestion = question
-        if(questionType === questionType.MultipleChoice){
+        if(questionType === questionTypes.MultipleChoice){
             submitQuestion = {...submitQuestion, choices: choices}
         } else {
             submitQuestion = {...submitQuestion, answer: ffAnswer}

@@ -22,30 +22,41 @@ public class QuestionController : ControllerBase {
     // GET: api/Question
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TestQuestion>>> GetTestQuestions() {
-        if (_context?.TestQuestions == null)
-            return NotFound();
+        if (_context?.MultipleChoiceQuestions is null || _context?.FreeFormQuestions is null)
+            return await Task.FromResult<ActionResult<IEnumerable<TestQuestion>>>(NotFound());
+
+
+        var mcp = _context.MultipleChoiceQuestions
+                .Where(x => x.CreatedBy == GetCurrentUserId())
+                .Include(x => x.Choices)
+                .AsEnumerable();
+
+        var ffp = _context.FreeFormQuestions
+                          .OfType<FreeFormProblem>()
+                          .Where(x => x.CreatedBy == GetCurrentUserId())
+                          .AsEnumerable();
         
-        return await _context.TestQuestions.Where(x => x.CreatedBy == GetCurrentUserId()).ToListAsync();
+        return await Task.FromResult(new ActionResult<IEnumerable<TestQuestion>>(mcp.Concat<TestQuestion>(ffp)));
     }
 
     // GET: api/Question/5
     [HttpGet("{id}")]
     public async Task<ActionResult<TestQuestion>> GetTestQuestion(int id) {
-        if (_context?.TestQuestions == null)
+        if (_context?.MultipleChoiceQuestions is null)
             return NotFound();
         
-        var testQuestion = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId());
-        if (testQuestion is null)
+        var multChoiceQuestion = await _context.MultipleChoiceQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId());
+        if (multChoiceQuestion is null)
             return NotFound();
 
-        return testQuestion;
+        return multChoiceQuestion;
     }
 
     // PUT: api/Question/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
     public async Task<IActionResult> PutTestQuestion(int id, TestQuestion testQuestion) {
-        if (_context?.TestQuestions is null)
+        if (_context?.MultipleChoiceQuestions is null)
             return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
         if (id == default || testQuestion == null || id != (testQuestion?.TestQuestionId ?? default))
             return BadRequest();
@@ -72,7 +83,7 @@ public class QuestionController : ControllerBase {
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
     public async Task<ActionResult<TestQuestion>> PostTestQuestion(MultipleChoiceProblemDto testQuestion) {
-        if (_context?.TestQuestions == null)
+        if (_context?.MultipleChoiceQuestions == null)
             return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
         
         testQuestion.TestQuestionId = default;
@@ -84,7 +95,7 @@ public class QuestionController : ControllerBase {
             choice.TestQuestion = mapped;
         }
         
-        _context.TestQuestions.Add(mapped);
+        _context.MultipleChoiceQuestions.Add(mapped);
         
         await _context.SaveChangesAsync();
 
@@ -96,21 +107,21 @@ public class QuestionController : ControllerBase {
     // DELETE: api/Question/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTestQuestion(int id) {
-        if (_context?.TestQuestions == null)
+        if (_context?.MultipleChoiceQuestions == null)
             return NotFound();
         
-        var testQuestion = await _context.TestQuestions.FindAsync(id);
+        var testQuestion = await _context.MultipleChoiceQuestions.FindAsync(id);
         if (testQuestion == null)
             return NotFound();
 
-        _context.TestQuestions.Remove(testQuestion);
+        _context.MultipleChoiceQuestions.Remove(testQuestion);
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
     private bool TestQuestionExists(int id) {
-        return (_context.TestQuestions?.Any(e => e.TestQuestionId == id)).GetValueOrDefault();
+        return (_context.MultipleChoiceQuestions?.Any(e => e.TestQuestionId == id)).GetValueOrDefault();
     }
     
     private string GetCurrentUserId() {
