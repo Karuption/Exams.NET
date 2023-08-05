@@ -1,21 +1,20 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Exams.NET.Models; 
 
 [JsonDerivedType(typeof(MultipleChoiceProblem), typeDiscriminator:"MultipleChoice")]
 [JsonDerivedType(typeof(FreeFormProblem), typeDiscriminator:"FreeForm")]
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 public class TestQuestion {
     public string CreatedBy { get; set; }
     public int TestQuestionId { get;set; }
     public string Prompt { get; set; }
-    public int TotalPointValue { get; set; }
+    public decimal TotalPointValue { get; set; }
 }
 
-[JsonDerivedType(typeof(MultipleChoiceProblemDto))]
-[JsonDerivedType(typeof(FreeFormProblemDto))]
+[JsonDerivedType(typeof(MultipleChoiceProblemDto), typeDiscriminator:"MultipleChoice")]
+[JsonDerivedType(typeof(FreeFormProblemDto), typeDiscriminator:"FreeForm")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 public class TestQuestionDto {
     public string? CreatedBy { get; set; }
     public int? TestQuestionId { get;set; }

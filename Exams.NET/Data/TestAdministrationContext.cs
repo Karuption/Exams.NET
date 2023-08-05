@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using Exams.NET.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,19 +11,22 @@ public class TestAdministrationContext : DbContext {
     public DbSet<Test> Tests { get; set; }
     public DbSet<MultipleChoiceProblem> MultipleChoiceQuestions { get; set; }
     public DbSet<FreeFormProblem> FreeFormQuestions { get; set; }
+    public DbSet<TestQuestion> TestQuestions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<MultipleChoiceProblem>()
-                    .ToTable(nameof(MultipleChoiceProblem));
+                    .HasMany<Choice>()
+                    .WithOne(e => e.TestQuestion as MultipleChoiceProblem);
 
         modelBuilder.Entity<MultipleChoiceProblem>()
-                    .HasMany<Choice>()
-                    .WithOne(e => e.TestQuestion as MultipleChoiceProblem)
-                    .HasForeignKey(x => x.TestQuestionID);
+                    .Navigation(x => x.Choices)
+                    .AutoInclude();
         
-        modelBuilder.Entity<FreeFormProblem>()
-                    .ToTable(nameof(FreeFormProblem));
+        modelBuilder.Entity<TestQuestion>()
+                    .HasDiscriminator<string>("Type")
+                    .HasValue<MultipleChoiceProblem>("MultipleChoice")
+                    .HasValue<FreeFormProblem>("FreeForm");
     }
 }

@@ -26,16 +26,9 @@ public class QuestionController : ControllerBase {
             return await Task.FromResult<ActionResult<IEnumerable<TestQuestion>>>(NotFound());
 
 
-        var mc = _context.MultipleChoiceQuestions
+        return await _context.TestQuestions
                 .Where(x => x.CreatedBy == GetCurrentUserId())
-                .Include(x=>x.Choices)
-                .Cast<TestQuestion>()
-                .AsEnumerable();
-
-        IEnumerable<TestQuestion> ffp = _context.FreeFormQuestions.Where(x => x.CreatedBy == GetCurrentUserId())
-                          .AsEnumerable();
-
-        return mc.Concat(ffp).ToList();
+                .ToListAsync();
     }
 
     // GET: api/Question/5
@@ -44,26 +37,53 @@ public class QuestionController : ControllerBase {
         if (_context?.MultipleChoiceQuestions is null)
             return NotFound();
         
-        var multChoiceQuestion = await _context.MultipleChoiceQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId());
-        if (multChoiceQuestion is null)
+        var question = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId());
+        if (question is null) 
             return NotFound();
 
-        return multChoiceQuestion;
+        return question;
     }
-
-    // PUT: api/Question/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTestQuestion(int id, TestQuestion testQuestion) {
+    [Route("MultipleChoice")]
+    public async Task<IActionResult> PutTestQuestion(int id, MultipleChoiceProblem testQuestion) {
         if (_context?.MultipleChoiceQuestions is null)
             return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        if (id == default || testQuestion == null || id != (testQuestion?.TestQuestionId ?? default))
+        if (id == default || id != (testQuestion?.TestQuestionId ?? default))
             return BadRequest();
         
         var orig = await _context.Tests.FirstOrDefaultAsync(x=> x.TestId==testQuestion!.TestQuestionId);
-        if (orig == null)
+        if (orig is null)
             return NotFound();
+        
+        orig.LastUpdated = DateTime.UtcNow;
+        _context.Entry(orig).CurrentValues.SetValues(testQuestion!);
 
+        try { 
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException) {
+            if (!TestQuestionExists(id))
+                return NotFound();
+            throw;
+        }
+        
+        return NoContent();
+    }
+    
+    [HttpPut("{id}")]
+    [Route("FreeForm")]
+    public async Task<IActionResult> PutTestQuestion(int id, FreeFormProblem testQuestion) {
+        if (_context?.MultipleChoiceQuestions is null)
+            return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
+        if (id == default || id != (testQuestion?.TestQuestionId ?? default))
+            return BadRequest();
+        
+        var orig = await _context.Tests.FirstOrDefaultAsync(x=> x.TestId==testQuestion!.TestQuestionId);
+        if (orig is null)
+            return NotFound();
+        
+        orig.LastUpdated = DateTime.UtcNow;
         _context.Entry(orig).CurrentValues.SetValues(testQuestion!);
 
         try { 
@@ -81,27 +101,42 @@ public class QuestionController : ControllerBase {
     // POST: api/Question
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
+    [Route("MultipleChoice")]
     public async Task<ActionResult<TestQuestion>> PostTestQuestion(MultipleChoiceProblemDto testQuestion) {
-        if (_context?.MultipleChoiceQuestions == null)
+        if (_context?.MultipleChoiceQuestions is null)
             return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
         
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
-        var mapped = _mapper.QuestionDtoToEntity(testQuestion);
+         var mapped = _mapper.QuestionDtoToEntity(testQuestion);
 
-        foreach (var choice in mapped.Choices) {
-            choice.TestQuestion = mapped;
-        }
+         foreach (var choice in mapped?.Choices ?? Array.Empty<Choice>()) {
+             choice.TestQuestion = mapped!;
+         }
         
-        _context.MultipleChoiceQuestions.Add(mapped);
+        _context.MultipleChoiceQuestions.Add(mapped!);
         
         await _context.SaveChangesAsync();
 
         return CreatedAtAction("GetTestQuestion", new { id = testQuestion.TestQuestionId }, testQuestion);
     }
     
-    
+    [HttpPost]
+    [Route("FreeForm")]
+    public async Task<ActionResult<TestQuestion>> PostTestQuestion(FreeFormProblemDto testQuestion) {
+        if (_context?.MultipleChoiceQuestions is null)
+            return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
+        
+        testQuestion.TestQuestionId = default;
+        testQuestion.CreatedBy = GetCurrentUserId();
+
+        var ffp = _mapper.QuestionDtoToEntity(testQuestion);
+        _context.FreeFormQuestions.Add(ffp);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction("GetTestQuestion", new { id = testQuestion.TestQuestionId }, testQuestion);
+    }
 
     // DELETE: api/Question/5
     [HttpDelete("{id}")]

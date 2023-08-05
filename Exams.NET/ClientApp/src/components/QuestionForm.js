@@ -185,34 +185,37 @@ export default function QuestionForm( { editQuestion = {} }) {
     const handleSubmit = async (event)=>{
         event.preventDefault();
         let submitQuestion = question
+        let type;
         if(questionType === questionTypes.MultipleChoice){
             submitQuestion = {...submitQuestion, choices: choices}
+            type = "MultipleChoice"
         } else {
             submitQuestion = {...submitQuestion, answer: ffAnswer}
+            type = "FreeForm"
         }
         if(submitQuestion.TestQuestionId)
-            await submitEditQuestion(submitQuestion);
+            await submitEditQuestion({toSend: submitQuestion, type: type});
         else 
-            await submitNewQuestion(submitQuestion);
+            await submitNewQuestion({toSend: submitQuestion, type: type});
     }
-    const submitNewQuestion = async (prop) => {
+    const submitNewQuestion = async ({toSend, type}) => {
         const token = await authService.getAccessToken();
-        await fetch('api/admin/Question', {
+        await fetch(`api/admin/Question/${type}`, {
             method : "POST",
             headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
-            body : JSON.stringify({...prop})
+            body : JSON.stringify({...toSend})
         })
             .then(response => response.json())
             .then(data => console.log(data))
             .catch(err => console.log(err));
     }
     
-    const submitEditQuestion = async (prop) => {
+    const submitEditQuestion = async ({toSend, type}) => {
         const token = await authService.getAccessToken();
-        await fetch(`api/admin/Question/${prop.testId}`, {
+        await fetch(`api/admin/Question/${type}`, {
             method : "PUT",
             headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
-            body : JSON.stringify({...prop})
+            body : JSON.stringify({...toSend})
         })
             .then(response => {
                 if(response.ok)
