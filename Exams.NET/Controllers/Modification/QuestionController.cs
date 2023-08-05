@@ -26,17 +26,16 @@ public class QuestionController : ControllerBase {
             return await Task.FromResult<ActionResult<IEnumerable<TestQuestion>>>(NotFound());
 
 
-        var mcp = _context.MultipleChoiceQuestions
+        var mc = _context.MultipleChoiceQuestions
                 .Where(x => x.CreatedBy == GetCurrentUserId())
-                .Include(x => x.Choices)
+                .Include(x=>x.Choices)
+                .Cast<TestQuestion>()
                 .AsEnumerable();
 
-        var ffp = _context.FreeFormQuestions
-                          .OfType<FreeFormProblem>()
-                          .Where(x => x.CreatedBy == GetCurrentUserId())
+        IEnumerable<TestQuestion> ffp = _context.FreeFormQuestions.Where(x => x.CreatedBy == GetCurrentUserId())
                           .AsEnumerable();
-        
-        return await Task.FromResult(new ActionResult<IEnumerable<TestQuestion>>(mcp.Concat<TestQuestion>(ffp)));
+
+        return mc.Concat(ffp).ToList();
     }
 
     // GET: api/Question/5

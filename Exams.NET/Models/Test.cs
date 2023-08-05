@@ -41,7 +41,6 @@ public class FreeFormUserUserAnswer: ITestQuestionUserAnswer {
 public class MultipleChoiceUserUserAnswer:ITestQuestionUserAnswer {
     public MultipleChoiceProblem Question { get; set; }
     public string UserId { get; set; }
-    public char Answer { get; set; }
     TestQuestion ITestQuestionUserAnswer.Question {
         get => Question;
         set => Question = (MultipleChoiceProblem)value;
