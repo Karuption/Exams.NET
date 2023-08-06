@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Exams.NET.Models; 
@@ -23,26 +24,34 @@ public class TestCreationDto {
     public IList<TestQuestion>? Problems { get; set; }
 }
 
-public interface ITestQuestionUserAnswer {
-    public TestQuestion Question { get; set; }
-    public string UserId { get; set; }
-}
-public class FreeFormUserUserAnswer: ITestQuestionUserAnswer {
-    public int UserAnswerID { get; set; }
-    public FreeFormProblem Question { get; set; }
-    public string UserId { get; set; }
-    public string? Answer { get; set; }
-    TestQuestion ITestQuestionUserAnswer.Question {
-        get => Question;
-        set => Question = (FreeFormProblem)value;
-    }
+public class UserTest {
+    public int TestId { get; set; }
+    public string TestTitle { get; set; } = "";
+    public string TestDescription { get; set; } = "";
+    public IList<UserTestQuestion>? Problems { get; set; }
 }
 
-public class MultipleChoiceUserUserAnswer:ITestQuestionUserAnswer {
-    public MultipleChoiceProblem Question { get; set; }
-    public string UserId { get; set; }
-    TestQuestion ITestQuestionUserAnswer.Question {
-        get => Question;
-        set => Question = (MultipleChoiceProblem)value;
-    }
+[JsonDerivedType(typeof(UserMultipleChoiceQuestion), typeDiscriminator:"MultipleChoice")]
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
+public class UserTestQuestion {
+    public string CreatedBy { get; set; }
+    public int TestQuestionId { get;set; }
+    public string Prompt { get; set; }
+    public decimal TotalPointValue { get; set; }
+}
+
+public class UserMultipleChoiceQuestion : UserTestQuestion {
+    public List<UserChoice?> Choices { get; set; }
+}
+
+public class UserChoice {
+    public Guid Id { get; set; }
+    public int TestQuestionID { get; set; }
+    public required string Description { get; set; }
+    public decimal ChoicePointValue { get; set; } = 0;
+}
+
+public class UserTestQuestionAnswer {
+    public UserTestQuestion Question { get; set; }
+    public string? UserId { get; set; }
 }

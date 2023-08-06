@@ -12,11 +12,9 @@ namespace Exams.NET.Controllers.Modification;
 [Authorize]
 public class QuestionController : ControllerBase {
     private readonly TestAdministrationContext _context;
-    private readonly TestMapper _mapper;
 
-    public QuestionController(TestAdministrationContext context, TestMapper mapper) {
+    public QuestionController(TestAdministrationContext context) {
         _context = context;
-        _mapper = mapper;
     }
 
     // GET: api/Question
@@ -109,7 +107,7 @@ public class QuestionController : ControllerBase {
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
-         var mapped = _mapper.QuestionDtoToEntity(testQuestion);
+         var mapped = testQuestion.ToEntity();
 
          foreach (var choice in mapped?.Choices ?? Array.Empty<Choice>()) {
              choice.TestQuestion = mapped!;
@@ -131,7 +129,7 @@ public class QuestionController : ControllerBase {
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
-        var ffp = _mapper.QuestionDtoToEntity(testQuestion);
+        var ffp = testQuestion.ToEntity();
         _context.FreeFormQuestions.Add(ffp);
         await _context.SaveChangesAsync();
 

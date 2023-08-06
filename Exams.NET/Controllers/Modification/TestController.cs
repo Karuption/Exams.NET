@@ -5,18 +5,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Exams.NET.Controllers.Modification; 
+namespace Exams.NET.Controllers.Modification;
 
 [Authorize]
 [ApiController]
 [Route("api/admin/[controller]")]
 public class TestController : ControllerBase {
     private readonly TestAdministrationContext _testContext;
-    private readonly TestMapper _testMapper;
 
-    public TestController(TestAdministrationContext testContext, TestMapper testMapper) {
+    public TestController(TestAdministrationContext testContext) {
         _testContext = testContext;
-        _testMapper = testMapper;
     }
 
     // GET: api/Tests
@@ -24,7 +22,7 @@ public class TestController : ControllerBase {
     public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken cancellationToken = default) {
         if (_testContext?.Tests == null)
             return NotFound();
-
+        
         var tests = _testContext.Tests.Where(x=> x.UserId == GetCurrentUserId())
                                 .Include(x=>x.Problems);
 
@@ -90,7 +88,7 @@ public class TestController : ControllerBase {
         testCreation.UserId = GetCurrentUserId();
         testCreation.LastUpdated = testCreation.Created = DateTime.UtcNow;
         
-        await _testContext.Tests.AddAsync(_testMapper.DtoToEntity(testCreation), cancellationToken);
+        await _testContext.Tests.AddAsync(testCreation.ToEntity(), cancellationToken);
         await _testContext.SaveChangesAsync(cancellationToken);
 
         return CreatedAtAction("GetTest", new { id = testCreation.TestId }, testCreation);

@@ -30,8 +30,6 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<TestMapper>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

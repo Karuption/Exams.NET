@@ -18,22 +18,26 @@ public class TestController : ControllerBase {
 
     // GET: api/Test
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Test>>> GetTests() {
+    public async Task<ActionResult<IEnumerable<UserTest>>> GetTests() {
         if (_context.Tests == null)
             return NotFound();
-        return await _context.Tests.ToListAsync();
+        return await _context.Tests
+                            .Select(x=>x.ToUser())
+                            .ToListAsync();
     }
 
     // GET: api/Test/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Test>> GetTest(int id) {
-        if (_context.Tests == null)
+    public async Task<ActionResult<UserTest>> GetTest(int id) {
+        if (_context?.Tests is null)
             return NotFound();
-        var test = await _context.Tests.FindAsync(id);
+        var test = await _context.Tests
+                                 .Include(x=>x.Problems)
+                                 .FirstOrDefaultAsync(x=>x.TestId == id);
 
-        if (test == null)
+        if (test is null)
             return NotFound();
 
-        return test;
+        return test.ToUser();
     }
 }
