@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,6 +53,11 @@ public class UserChoice {
 }
 
 public class UserTestQuestionAnswer {
-    public UserTestQuestion Question { get; set; }
+    [Key]
+    public Guid Id { get; set; }
+    [ForeignKey(nameof(TestQuestion))]
+    public int QuestionId { get; set; }
+    public string Answer { get; set; }
     public string? UserId { get; set; }
+    public int TestQuestionId { get; set; }
 }

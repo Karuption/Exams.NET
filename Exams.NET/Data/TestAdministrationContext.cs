@@ -12,6 +12,7 @@ public class TestAdministrationContext : DbContext {
     public DbSet<MultipleChoiceProblem> MultipleChoiceQuestions { get; set; }
     public DbSet<FreeFormProblem> FreeFormQuestions { get; set; }
     public DbSet<TestQuestion> TestQuestions { get; set; }
+    public DbSet<UserTestQuestionAnswer> UserAnswers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
