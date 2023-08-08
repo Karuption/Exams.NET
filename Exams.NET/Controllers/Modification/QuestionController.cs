@@ -153,7 +153,7 @@ public class QuestionController : ControllerBase {
     }
 
     private bool TestQuestionExists(int id) {
-        return (_context.MultipleChoiceQuestions?.Any(e => e.TestQuestionId == id)).GetValueOrDefault();
+        return (_context.TestQuestions?.Any(e => e.TestQuestionId == id)).GetValueOrDefault();
     }
     
     private string GetCurrentUserId() {
