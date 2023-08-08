@@ -49,7 +49,6 @@ public class UserChoice {
     public Guid Id { get; set; }
     public int TestQuestionID { get; set; }
     public required string Description { get; set; }
-    public decimal ChoicePointValue { get; set; } = 0;
 }
 
 public class UserTestQuestionAnswer {
@@ -58,6 +57,14 @@ public class UserTestQuestionAnswer {
     [ForeignKey(nameof(TestQuestion))]
     public int QuestionId { get; set; }
     public string Answer { get; set; }
+    public string UserId { get; set; }
+}
+
+public class UserTestQuestionAnswerCreationDto {
+    [Key]
+    public Guid? Id { get; set; }
+    [ForeignKey(nameof(TestQuestion))]
+    public int QuestionId { get; set; }
+    public string Answer { get; set; }
     public string? UserId { get; set; }
-    public int TestQuestionId { get; set; }
 }
