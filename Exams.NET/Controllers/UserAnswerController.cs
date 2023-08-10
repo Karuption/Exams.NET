@@ -1,12 +1,15 @@
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Riok.Mapperly.Abstractions;
 
 namespace Exams.NET.Controllers; 
 
+[Authorize]
+[ApiController]
+[Route("api/[controller]")]
 public class UserAnswerController : Controller {
     private readonly TestAdministrationContext _context;
     public UserAnswerController(TestAdministrationContext context) {
