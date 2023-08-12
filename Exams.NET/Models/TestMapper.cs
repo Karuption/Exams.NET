@@ -22,5 +22,5 @@ public static partial class TestMapper {
     public static partial UserTestQuestion ToUserQuestion(this FreeFormProblem freeFormProblem);
     public static partial UserChoice ToUser(this Choice choice);
 
-    public static partial UserTestQuestionAnswer ToEntity(this UserTestQuestionAnswerCreationDto questionAnswerCreationDto);
+    public static partial UserTestQuestionAnswer? ToEntity(this UserTestQuestionAnswerCreationDto questionAnswerCreationDto);
 }

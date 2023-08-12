@@ -75,15 +75,17 @@ public class UserAnswerController : Controller {
 
     [HttpPost]
     public async Task<ActionResult<UserTestQuestionAnswer>> PostUserAnswer(
-        UserTestQuestionAnswerCreationDto userTestQuestionAnswerCreationDto) {
+        [FromBody] UserTestQuestionAnswerCreationDto userTestQuestionAnswerCreationDto) {
         if ((userTestQuestionAnswerCreationDto.Id ?? default) != default || 
                 userTestQuestionAnswerCreationDto.QuestionId == default)
             return BadRequest();
 
         userTestQuestionAnswerCreationDto.UserId = GetCurrentUserId();
         var userTestQuestionAnswer = userTestQuestionAnswerCreationDto.ToEntity();
+        if (userTestQuestionAnswer is null)
+            return BadRequest();
 
-        await _context.AddAsync(userTestQuestionAnswer);
+        await _context.UserAnswers.AddAsync(userTestQuestionAnswer);
 
         try {
             await _context.SaveChangesAsync();

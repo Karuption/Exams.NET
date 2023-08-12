@@ -1,6 +1,7 @@
 import authService from "./api-authorization/AuthorizeService";
 import {useEffect, useState} from "react";
 import {Button, Card, CardBody, CardHeader, CardSubtitle, Form, FormGroup, Input, Label} from "reactstrap";
+import {User} from "oidc-client";
 
 export default function UserTest({testId}) {
     const [loading, setLoading] = useState(true);
@@ -13,11 +14,16 @@ export default function UserTest({testId}) {
             userAnswers && userAnswers.length > 0)
             setLoading(false);
         }, [test,userAnswers])
-    const answerChange = (index, answer) => {
+    const answerChange = async (index, answer) => {
         const updatedAnswers = [...userAnswers];
 
         updatedAnswers[index].answer = answer;
+
+        if (updatedAnswers[index].id === "00000000-0000-0000-0000-000000000000")
+            return await postUserAnswer(updatedAnswers[index]);
+
         updatedAnswers[index].id = test.problems[index].testQuestionId
+        await putUserAnswer(answer);
         setUserAnswers(updatedAnswers);
     }
     
@@ -53,11 +59,29 @@ export default function UserTest({testId}) {
             .then(data => setUserAnswers(data));
     }
 
+    async function postUserAnswer(userAnswer){
+        const token = await authService.getAccessToken();
+        await fetch('api/UserAnswer', {
+            method: 'POST',
+            headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({answer: userAnswer.answer, questionId: userAnswer.questionId})
+        }).then(res => {
+            if(!res.ok) {
+                console.log(res);
+            }
+            else
+                return res.json();
+        })
+            .then(async data => await getUserAnswersByTestId(test.testId));
+    }
+
+
     async function putUserAnswer(userAnswer){
         const token = await authService.getAccessToken();
         await fetch(`api/UserAnswer/${userAnswer}`, {
             method: 'PUT',
-            headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(userAnswer)
         }).then(res => {
             if(!res.ok) {
                 console.log(res);
