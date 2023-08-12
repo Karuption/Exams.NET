@@ -4,6 +4,7 @@ using Exams.NET.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Common;
 
 namespace Exams.NET.Controllers; 
 
@@ -23,11 +24,34 @@ public class UserAnswerController : Controller {
     }
     
     [HttpGet]
+    [Route("{id:guid}")]
     public async Task<ActionResult<UserTestQuestionAnswer>> GetAnswer(Guid id) {
         return await _context.UserAnswers.FirstAsync(x => x.UserId == GetCurrentUserId()
                             && x.Id == id);
     }
+    
+    [HttpGet]
+    [Route("{TestId:int}")]
+    public async Task<ActionResult<IEnumerable<UserTestQuestionAnswer>>> GetAnswers(int TestId) {
+        var test = await _context.Tests.AsNoTracking()
+                                 .Include(test => test.Problems)
+                                 .FirstOrDefaultAsync(x => x.TestId == TestId);
+        if (test is null) 
+            return BadRequest();
 
+        var testQuestionAnswers = new List<UserTestQuestionAnswer>(test.Problems?.Count ?? 0);
+        foreach (var question in test.Problems??Array.Empty<TestQuestion>()) {
+            var questionUserAnswer = await _context.UserAnswers
+                                                   .AsNoTracking()
+                                                   .FirstOrDefaultAsync(x => x.QuestionId == question.TestQuestionId)
+                                     ?? new UserTestQuestionAnswer(){QuestionId = question.TestQuestionId,UserId = GetCurrentUserId(), Answer = ""};
+            
+            testQuestionAnswers.Add(questionUserAnswer);
+        }
+
+        return testQuestionAnswers;
+    }
+    
     [HttpPut]
     public async Task<ActionResult> PutAnswer(Guid id, UserTestQuestionAnswer userTestQuestionAnswer) {
         if (id == default || id != userTestQuestionAnswer.Id)
