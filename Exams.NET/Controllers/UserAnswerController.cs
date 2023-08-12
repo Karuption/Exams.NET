@@ -53,11 +53,14 @@ public class UserAnswerController : Controller {
     }
     
     [HttpPut]
+    [Route("{id}")]
     public async Task<ActionResult> PutAnswer(Guid id, UserTestQuestionAnswer userTestQuestionAnswer) {
-        if (id == default || id != userTestQuestionAnswer.Id)
+        if (id == default || id != userTestQuestionAnswer.Id || userTestQuestionAnswer.UserId != GetCurrentUserId())
             return BadRequest();
 
-        var orig = _context.UserAnswers.FirstAsync(x => x.Id == id);
+        var orig = await _context.UserAnswers.FirstOrDefaultAsync(x => x.Id == id);
+        if (orig is null || userTestQuestionAnswer.UserId != orig.UserId)
+            return NotFound();
         
         _context.Entry(orig).CurrentValues.SetValues(userTestQuestionAnswer);
 

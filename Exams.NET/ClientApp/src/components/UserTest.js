@@ -1,5 +1,5 @@
 import authService from "./api-authorization/AuthorizeService";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Button, Card, CardBody, CardHeader, CardSubtitle, Form, FormGroup, Input, Label} from "reactstrap";
 import {User} from "oidc-client";
 
@@ -19,14 +19,13 @@ export default function UserTest({testId}) {
 
         updatedAnswers[index].answer = answer;
 
-        if (updatedAnswers[index].id === "00000000-0000-0000-0000-000000000000")
+        if (updatedAnswers[index].id === "00000000-0000-0000-0000-000000000000"){
             return await postUserAnswer(updatedAnswers[index]);
-
-        updatedAnswers[index].id = test.problems[index].testQuestionId
-        await putUserAnswer(answer);
+        } 
+        await putUserAnswer(updatedAnswers[index]);
         setUserAnswers(updatedAnswers);
     }
-    
+        
     let content = loading ?
         <p><em>Loading...</em></p>
         : <UserTestView userTest={test} userAnswers={userAnswers} answerChange={answerChange}/>;
@@ -78,7 +77,7 @@ export default function UserTest({testId}) {
 
     async function putUserAnswer(userAnswer){
         const token = await authService.getAccessToken();
-        await fetch(`api/UserAnswer/${userAnswer}`, {
+        await fetch(`api/UserAnswer/${userAnswer.id}`, {
             method: 'PUT',
             headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(userAnswer)
@@ -86,10 +85,7 @@ export default function UserTest({testId}) {
             if(!res.ok) {
                 console.log(res);
             }
-            else
-                return res.json();
-        })
-            .then(data => setTest(data));
+        }).catch(e=> console.error(e));
     }
 }
 
@@ -116,6 +112,7 @@ function UserTestView ({userTest, userAnswers, answerChange}) {
                               </CardBody>
                             : <CardBody className={"px-2"}>
                                 <FreeformAnswerForm answer={userAnswers[index].answer} 
+                                                    onChange={answerChange}
                                                     questionId={index}/>
                               </CardBody>
                     }
@@ -150,8 +147,18 @@ function MultipleChoiceAnswerForm ({choices, selected = "", questionId, onChange
     );
 }
 
-function FreeformAnswerForm ({answer = "", questionId, onChange}) {
+function FreeformAnswerForm ({answer = "", questionId, onChange, debounceInterval= 2000}) {
     const [freeformAnswer, setFreeformAnswer] = useState(answer);
+    const timeout = useRef(null);
+    
+    // debounce the user input. 
+    // Use "timeout" as a way to escape this, in the case of onBlur firing before debounced input
+    const delayUpdate = (answer) => {
+        setFreeformAnswer(answer);
+        timeout.current = setTimeout(()=> {
+            onChange(questionId, freeformAnswer)
+        }, debounceInterval);
+    }
     
     return (
         <Form>
@@ -159,8 +166,8 @@ function FreeformAnswerForm ({answer = "", questionId, onChange}) {
                 <Input id={"answer"}
                        type={"textarea"}
                        value={freeformAnswer} 
-                       onChange={event => setFreeformAnswer(event.target.value)}
-                       onBlur={_=>onChange(questionId, freeformAnswer)} />
+                       onChange={event => delayUpdate(event.target.value)}
+                       onBlur={_=>{clearTimeout(timeout.current);onChange(questionId, freeformAnswer)}} />
                 <Label for={"answer"}>Answer</Label>
             </FormGroup>
         </Form>
