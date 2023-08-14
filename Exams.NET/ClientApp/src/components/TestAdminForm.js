@@ -1,9 +1,8 @@
 import {useEffect, useState} from "react";
-import {Form, FormFeedback, FormGroup, Input, Label, Modal, ModalBody, ModalHeader, Row} from "reactstrap";
+import {Button, Form, FormFeedback, FormGroup, Input, Label} from "reactstrap";
 import authService from "./api-authorization/AuthorizeService";
-import {FaL} from "react-icons/fa6";
 
-export default function TestForm( { ParentCallback, isOpen , toggle , headerText = "Create a new test", editTest } ) {
+export default function TestForm( { ParentCallback , editTest } ) {
     const [testForm, setTestForm] = useState(editTest);
     const [testFormValidation, setTestFormValidation] = useState({isValidTitle: true, isValidDescription: true, titleError:"", descriptionError:""});
     const [submitBlock, setSubmitBlock] = useState(true);
@@ -34,7 +33,6 @@ export default function TestForm( { ParentCallback, isOpen , toggle , headerText
             await submitNewTest(testForm);
         else
             await submitEditedTest(testForm);
-        toggle();
         await ParentCallback();
     }
 
@@ -44,7 +42,7 @@ export default function TestForm( { ParentCallback, isOpen , toggle , headerText
         setTestForm({...testForm, [name]: value});
     }
 
-    const submitNewTest= async (prop) => {
+    const submitNewTest = async (prop) => {
         const token = await authService.getAccessToken();
         await fetch('api/admin/Test', {
             method : "POST",
@@ -56,7 +54,7 @@ export default function TestForm( { ParentCallback, isOpen , toggle , headerText
             .catch(err => console.log(err));
     }
 
-    const submitEditedTest= async (prop) => {
+    const submitEditedTest = async (prop) => {
         const token = await authService.getAccessToken();
         await fetch(`api/admin/Test/${prop.testId}`, {
             method : "PUT",
@@ -73,33 +71,28 @@ export default function TestForm( { ParentCallback, isOpen , toggle , headerText
     }
 
     return (
-        <Modal isOpen={isOpen} toggle={toggle}>
-                <ModalHeader>{headerText}</ModalHeader>
-                <ModalBody>
-                    <Form onSubmit={handleSubmit}>
-                        <FormGroup id={"test"} floating={true}>
-                            <Input id={"testTitle"}
-                                   name={"testTitle"}
-                                   invalid={!testFormValidation.isValidTitle}
-                                   onChange={handleFormChanges}
-                                   placeholder={"Test Title"}
-                                   value={testForm.testTitle}/>
-                            <Label for={"testTitle"} >Test Title</Label>
-                            <FormFeedback valid={false}>{testFormValidation.descriptionError}</FormFeedback>
-                        </FormGroup>
-                        <FormGroup floating={true}>
-                            <Input id={"testDescription"}
-                                   name={"testDescription"}
-                                   onChange={handleFormChanges}
-                                   type={"textarea"}
-                                   value={testForm.testDescription} />
-                            <Label for={"testDescription"}>testDescription</Label>
-                        </FormGroup>
-                        <button className={"btn btn-primary text-center"} disabled={submitBlock}>
-                            Submit
-                        </button>
-                    </Form>
-                </ModalBody>
-        </Modal>
+            <Form onSubmit={handleSubmit}>
+                <FormGroup id={"test"} floating={true}>
+                    <Input id={"testTitle"}
+                           name={"testTitle"}
+                           invalid={!testFormValidation.isValidTitle}
+                           onChange={handleFormChanges}
+                           placeholder={"Test Title"}
+                           value={testForm.testTitle}/>
+                    <Label for={"testTitle"} >Test Title</Label>
+                    <FormFeedback valid={false}>{testFormValidation.descriptionError}</FormFeedback>
+                </FormGroup>
+                <FormGroup floating={true}>
+                    <Input id={"testDescription"}
+                           name={"testDescription"}
+                           onChange={handleFormChanges}
+                           type={"textarea"}
+                           value={testForm.testDescription} />
+                    <Label for={"testDescription"}>testDescription</Label>
+                </FormGroup>
+                <Button className={"btn btn-primary text-center"} disabled={submitBlock}>
+                    Submit
+                </Button>
+            </Form>
     )
 }

@@ -1,6 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import authService from './api-authorization/AuthorizeService'
-import {Button, CloseButton} from "reactstrap";
+import {
+    Button,
+    CloseButton,
+    Modal,
+    ModalBody,
+    ModalHeader
+} from "reactstrap";
 import TestForm from "./TestAdminForm";
 import { FaEdit } from 'react-icons/fa';
 
@@ -9,6 +15,7 @@ export default function TestAdmin() {
     const [loading, setLoading] = useState(true);
     const [selectedTest, setSelectedTest] = useState({});
     const [testModal, setTestModal] = useState(false);
+    const [headerText, setHeaderText] = useState("Create New Test");
     
     useEffect(()=> {populateTests()}, []);
     
@@ -23,12 +30,14 @@ export default function TestAdmin() {
         <div>
             <h1 id="tableLabel">Test Administration</h1>
             <p>This is for the high level administration of test.</p>
-            <button className={"btn btn-primary"} onClick={()=>{setSelectedTest({});setTestModal(!testModal);}} >Create New Test</button>
-            <TestForm ParentCallback={populateTests} 
-                      toggle={()=>setTestModal(!testModal)}
-                      isOpen={testModal}
-                      headerText={"Create New Test"} 
-                      editTest={selectedTest}/>
+            <button className={"btn btn-primary"} onClick={()=>{setSelectedTest({});setTestModal(!testModal);setHeaderText("Create New Test")}} >Create New Test</button>
+            <Modal isOpen={testModal} toggle={()=>setTestModal(n=>!n)}>
+                <ModalHeader>{headerText}</ModalHeader>
+                <ModalBody>
+                    <TestForm ParentCallback={()=>{setTestModal(n=>!n);populateTests()}}
+                              editTest={selectedTest} />
+                </ModalBody>
+            </Modal>
             {table}
         </div>
     );
@@ -54,7 +63,7 @@ export default function TestAdmin() {
                             <td>{test.created}</td>
                             <td>{test.lastUpdated}</td>
                             <td className="d-flex align-items-center justify-content-end">
-                                <Button color="link" style={{paddingTop: '0', marginRight: 0}} onClick={() => editTest(test)}>
+                                <Button color="link" style={{paddingTop: '0', marginRight: 0}} onClick={() => {setHeaderText(`Edit: ${test.testTitle}`);editTest(test)}}>
                                     <FaEdit style={{fontSize: 22}} />
                                 </Button>
                                 <CloseButton close onClick={() => deleteTest(test.testId)}/>
