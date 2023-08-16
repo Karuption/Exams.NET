@@ -1,6 +1,7 @@
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
-    Button,
+    Breadcrumb, BreadcrumbItem,
+    Button, Card, CardBody, CardHeader, CardSubtitle, CloseButton,
     Dropdown,
     DropdownItem,
     DropdownMenu,
@@ -9,11 +10,10 @@ import {
     FormFeedback,
     FormGroup,
     Input,
-    Label, 
-    Modal,
-    ModalBody
+    Label,
 } from "reactstrap";
 import authService from "./api-authorization/AuthorizeService";
+import {QuestionPopUp, QuestionTextView} from "./QuestionControls";
 
 export default function TestForm( { ParentCallback , editTest } ) {
     const [testForm, setTestForm] = useState(editTest);
@@ -21,6 +21,7 @@ export default function TestForm( { ParentCallback , editTest } ) {
     const [submitBlock, setSubmitBlock] = useState(true);
     const [editing,setEditing] = useState(Object.keys(editTest).length === 0);
     const [problems, setProblems] = useState([]);
+    const [questionPopUpOpen, setQuestionPopUpOpen] = useState(false);
 
     // Test form editing, if its null/undefined/empty, then we are editing
     useEffect(()=> {
@@ -32,7 +33,7 @@ export default function TestForm( { ParentCallback , editTest } ) {
             setEditing(true);
         }
         getAllQuestions();
-        setProblems()
+        setProblems(editTest.problems);
         }, [editTest]);
 
     // set submit block and validate the test
@@ -88,21 +89,7 @@ export default function TestForm( { ParentCallback , editTest } ) {
             }).then(data => console.log(data))
             .catch(err => console.log(err));
     }
-
-    function QuestionDropdownMenu({questions = [], selectQuestion = {}}) {
-        const [open, setOpen] = useState(false);
-
-         return (
-            <Dropdown isOpen={open} toggle={()=>setOpen(!open)} direction={'down'}>
-                <DropdownToggle caret={true} color={'primary'}>Add a test question</DropdownToggle>
-                <DropdownMenu end={true}>
-                    <DropdownItem>Clone existing</DropdownItem>
-                    <DropdownItem>New Question</DropdownItem>
-                </DropdownMenu>
-            </Dropdown>
-        );
-    }
-
+    
     return (
             <Form onSubmit={handleSubmit}>
                 <FormGroup id={"test"} floating={true}>
@@ -118,13 +105,27 @@ export default function TestForm( { ParentCallback , editTest } ) {
                 <FormGroup floating={true}>
                     <Input id={"testDescription"}
                            name={"testDescription"}
-                           onChange={handleFormChanges}
+                           onChange={handleFormChanges}tttt--
                            type={"textarea"}
                            value={testForm.testDescription} />
-                    <Label for={"testDescription"}>testDescription</Label>
+                    <Label for={"testDescription"}>Test Description</Label>
                 </FormGroup>
+                <div className={'d-flex justify-content-center my-2'}>
+                    <h5 className={'my-0'}>Test Questions</h5>
+                </div>
+                {
+                    problems.map(problem=> (
+                        <Card className={'my-3'}>
+                            <CloseButton className={'position-absolute top-0 end-0 me-2 mt-2'} />
+                            <CardHeader>{problem.choice?'Multiple choice':'Free Answer'}</CardHeader>
+                            <CardBody>
+                                <QuestionTextView question={problem} />
+                            </CardBody>
+                        </Card>
+                    ))
+                }
                 <FormGroup>
-                    <QuestionDropdownMenu/>
+                    <QuestionDropdownMenu questions={problems}/>
                 </FormGroup>
                 <Button className={"btn btn-primary text-center"} disabled={submitBlock}>
                     Submit
@@ -145,17 +146,23 @@ export default function TestForm( { ParentCallback , editTest } ) {
     }
 }
 
-function QuestionSelector ({questions = [], selectQuestion}) {
-    if(questions.length === 0)
-        return (
-            <Input type={'select'}><option value={""}>No questions to select</option></Input>
-        );
-    
+function QuestionDropdownMenu({questions = [], onQuestionSelection = e => {}}) {
+    const [open, setOpen] = useState(false);
+    const [questionPopupOpen, setQuestionPopupOpen] = useState(false);
+
     return (
-        <Input type="select">
-            {questions.map(problem => (
-                    <option key={problem.id}>{problem.prompt}</option>
-                ))}
-        </Input>
+        <>
+            <Dropdown isOpen={open} toggle={()=>setOpen(!open)} direction={'down'}>
+                <DropdownToggle caret={true} color={'primary'}>Add a test question</DropdownToggle>
+                <DropdownMenu end={true}>
+                    <DropdownItem disabled={questions.length<1} onClick={()=>setQuestionPopupOpen(true)}>Clone existing</DropdownItem>
+                    <DropdownItem>New Question</DropdownItem>
+                </DropdownMenu>
+            </Dropdown>
+            <QuestionPopUp questions={questions} 
+                           toggle={()=>setQuestionPopupOpen(!questionPopupOpen)} 
+                           isOpen={questionPopupOpen} 
+                           onSelection={e=>alert(JSON.stringify(e))}/>
+        </>
     );
 }
