@@ -1,5 +1,18 @@
 import {useEffect, useState} from "react";
-import {Button, Form, FormFeedback, FormGroup, Input, Label} from "reactstrap";
+import {
+    Button,
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+    Form,
+    FormFeedback,
+    FormGroup,
+    Input,
+    Label, 
+    Modal,
+    ModalBody
+} from "reactstrap";
 import authService from "./api-authorization/AuthorizeService";
 
 export default function TestForm( { ParentCallback , editTest } ) {
@@ -7,6 +20,7 @@ export default function TestForm( { ParentCallback , editTest } ) {
     const [testFormValidation, setTestFormValidation] = useState({isValidTitle: true, isValidDescription: true, titleError:"", descriptionError:""});
     const [submitBlock, setSubmitBlock] = useState(true);
     const [editing,setEditing] = useState(Object.keys(editTest).length === 0);
+    const [problems, setProblems] = useState([]);
 
     // Test form editing, if its null/undefined/empty, then we are editing
     useEffect(()=> {
@@ -16,7 +30,10 @@ export default function TestForm( { ParentCallback , editTest } ) {
         }else {
             setTestForm(editTest);
             setEditing(true);
-        }}, [editTest]);
+        }
+        getAllQuestions();
+        setProblems()
+        }, [editTest]);
 
     // set submit block and validate the test
     useEffect(()=>{
@@ -29,6 +46,8 @@ export default function TestForm( { ParentCallback , editTest } ) {
     
     const handleSubmit = async (event) => {
         event.preventDefault();
+        if(problems && problems !== [])
+            testForm.problems = [...problems];
         if(!editing)
             await submitNewTest(testForm);
         else
@@ -70,6 +89,20 @@ export default function TestForm( { ParentCallback , editTest } ) {
             .catch(err => console.log(err));
     }
 
+    function QuestionDropdownMenu({questions = [], selectQuestion = {}}) {
+        const [open, setOpen] = useState(false);
+
+         return (
+            <Dropdown isOpen={open} toggle={()=>setOpen(!open)} direction={'down'}>
+                <DropdownToggle caret={true} color={'primary'}>Add a test question</DropdownToggle>
+                <DropdownMenu end={true}>
+                    <DropdownItem>Clone existing</DropdownItem>
+                    <DropdownItem>New Question</DropdownItem>
+                </DropdownMenu>
+            </Dropdown>
+        );
+    }
+
     return (
             <Form onSubmit={handleSubmit}>
                 <FormGroup id={"test"} floating={true}>
@@ -78,8 +111,8 @@ export default function TestForm( { ParentCallback , editTest } ) {
                            invalid={!testFormValidation.isValidTitle}
                            onChange={handleFormChanges}
                            placeholder={"Test Title"}
-                           value={testForm.testTitle}/>
-                    <Label for={"testTitle"} >Test Title</Label>
+                           value={testForm.testTitle} />
+                    <Label for={"testTitle"}>Test Title</Label>
                     <FormFeedback valid={false}>{testFormValidation.descriptionError}</FormFeedback>
                 </FormGroup>
                 <FormGroup floating={true}>
@@ -90,9 +123,39 @@ export default function TestForm( { ParentCallback , editTest } ) {
                            value={testForm.testDescription} />
                     <Label for={"testDescription"}>testDescription</Label>
                 </FormGroup>
+                <FormGroup>
+                    <QuestionDropdownMenu/>
+                </FormGroup>
                 <Button className={"btn btn-primary text-center"} disabled={submitBlock}>
                     Submit
                 </Button>
             </Form>
     )
+    async function getAllQuestions() {
+        const token = await authService.getAccessToken();
+        await fetch('api/admin/Question', {
+            headers: !token ? {} : { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        }).then(res => {
+            if(!res.ok)
+                console.log(res);
+            else
+                return res.json();
+        })
+            .then(data => setProblems(data));
+    }
+}
+
+function QuestionSelector ({questions = [], selectQuestion}) {
+    if(questions.length === 0)
+        return (
+            <Input type={'select'}><option value={""}>No questions to select</option></Input>
+        );
+    
+    return (
+        <Input type="select">
+            {questions.map(problem => (
+                    <option key={problem.id}>{problem.prompt}</option>
+                ))}
+        </Input>
+    );
 }
