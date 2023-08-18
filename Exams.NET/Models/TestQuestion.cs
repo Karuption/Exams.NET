@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace Exams.NET.Models; 
@@ -49,7 +50,7 @@ public class ChoiceDto {
 public class Choice {
     public Guid Id { get; set; }
     public int TestQuestionID { get; set; }
-    [JsonIgnore]
+    [System.Text.Json.Serialization.JsonIgnore]
     public TestQuestion TestQuestion { get; set; }
     public required string Description { get; set; }
     public decimal ChoicePointValue { get; set; } = 0;
