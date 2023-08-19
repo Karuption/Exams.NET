@@ -127,7 +127,7 @@ export default function TestForm( { ParentCallback , editTest } ) {
                                 <Card className={'my-3'} key={index}>
                                     <CloseButton className={'position-absolute top-0 end-0 me-2 mt-2'} 
                                                  onClick={_=>removeQuestion(problem,index)}/>
-                                    <CardHeader>{problem.choice?'Multiple choice':'Free Answer'}</CardHeader>
+                                    <CardHeader>{problem.choices?'Multiple choice':'Free Answer'}</CardHeader>
                                     <CardBody>
                                         <QuestionTextView question={problem} />
                                     </CardBody>
@@ -174,8 +174,8 @@ function QuestionDropdownMenu({questions = [], onQuestionSelection, testId}) {
     const [qCreation, setQCreation] = useState(false);
     const [allQuestions, setAllQuestions] = useState([...questions]);
 
-    useEffect(async () => {
-        await getAllQuestions();
+    useEffect( () => {
+        getAllQuestions();
     }, []);
 
     async function getAllQuestions() {
@@ -196,8 +196,7 @@ function QuestionDropdownMenu({questions = [], onQuestionSelection, testId}) {
             <Dropdown isOpen={open} toggle={() => setOpen(!open)} direction={'down'}>
                 <DropdownToggle caret={true} color={'primary'}>Add a test question</DropdownToggle>
                 <DropdownMenu end={true}>
-                    <DropdownItem disabled={allQuestions.length < 1} onClick={() => setQuestionPopupOpen(true)}>Clone
-                                                                                                                existing</DropdownItem>
+                    <DropdownItem disabled={allQuestions.length < 1} onClick={() => setQuestionPopupOpen(true)}>Re-assign existing</DropdownItem>
                     <DropdownItem onClick={_ => setQCreation(!qCreation)}>Create New Question</DropdownItem>
                 </DropdownMenu>
             </Dropdown>
