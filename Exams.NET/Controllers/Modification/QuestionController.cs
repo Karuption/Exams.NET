@@ -28,6 +28,18 @@ public class QuestionController : ControllerBase {
                 .Where(x => x.CreatedBy == GetCurrentUserId())
                 .ToListAsync();
     }
+    
+    [HttpGet]
+    [Route("Unassigned")]
+    public async Task<ActionResult<IEnumerable<TestQuestion>>> GetUnassignedTestQuestions() {
+        if (_context?.MultipleChoiceQuestions is null || _context?.FreeFormQuestions is null)
+            return await Task.FromResult<ActionResult<IEnumerable<TestQuestion>>>(NotFound());
+
+
+        return await _context.TestQuestions
+                             .Where(x => x.CreatedBy == GetCurrentUserId() && default == (x.TestId ?? default))
+                             .ToListAsync();
+    }
 
     // GET: api/Question/5
     [HttpGet("{id}")]

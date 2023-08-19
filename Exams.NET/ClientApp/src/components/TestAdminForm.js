@@ -175,12 +175,12 @@ function QuestionDropdownMenu({questions = [], onQuestionSelection, testId}) {
     const [allQuestions, setAllQuestions] = useState([...questions]);
 
     useEffect( () => {
-        getAllQuestions();
+        GetAllUnassignedQuestions();
     }, []);
 
-    async function getAllQuestions() {
+    async function GetAllUnassignedQuestions() {
         const token = await authService.getAccessToken();
-        await fetch(`api/admin/Question`, {
+        await fetch(`api/admin/Question/Unassigned`, {
             headers: !token ? {} : {'Authorization': `Bearer ${token}`, 'Accept': 'application/json'},
         }).then(res => {
             if (!res.ok)
@@ -196,7 +196,7 @@ function QuestionDropdownMenu({questions = [], onQuestionSelection, testId}) {
             <Dropdown isOpen={open} toggle={() => setOpen(!open)} direction={'down'}>
                 <DropdownToggle caret={true} color={'primary'}>Add a test question</DropdownToggle>
                 <DropdownMenu end={true}>
-                    <DropdownItem disabled={allQuestions.length < 1} onClick={() => setQuestionPopupOpen(true)}>Re-assign existing</DropdownItem>
+                    <DropdownItem disabled={allQuestions.length < 1} onClick={() => setQuestionPopupOpen(true)}>Assign existing</DropdownItem>
                     <DropdownItem onClick={_ => setQCreation(!qCreation)}>Create New Question</DropdownItem>
                 </DropdownMenu>
             </Dropdown>
