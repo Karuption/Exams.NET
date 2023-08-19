@@ -68,8 +68,8 @@ const FreeFormQuestion = ({answer, handleAnswerChange}) => {
     );
 };
 
-export default function QuestionForm( { editQuestion = {} }) {
-    let editQCache = editQuestion;
+export default function QuestionForm( { testId = null, editQuestion = {}, callback = (x)=>x}) {
+    let editQCache = {...editQuestion};
     const [submittable, setSubmittable] = useState(true);
     const questionTypes = Object.freeze({
         "MultipleChoice": "Multiple Choice",
@@ -81,11 +81,6 @@ export default function QuestionForm( { editQuestion = {} }) {
     const [choices, setChoices] = useState([{choicePointValue: 0,description:""}]);
     const [ffAnswer, setFFAnswer] = useState("");
     const [multipleChoiceValidity, setMultipleChoiceValidity] = useState([{isPromptValid:true,isPointValueValid:true,descriptionError:"",pointValueError:""}]);
-
-    useEffect(() => {
-        if(editQCache !== editQuestion)
-            setQuestion({...editQuestion});
-    }, [editQuestion]);
     
     const handleQuestionTypeChange = (event) => {
         event.preventDefault();
@@ -182,52 +177,33 @@ export default function QuestionForm( { editQuestion = {} }) {
         setSubmittable(submittable);
     }, [questionValidity, questionType, multipleChoiceValidity]);
 
-    const handleSubmit = async (event)=>{
+    async function handleSubmit(event) {
         event.preventDefault();
-        let submitQuestion = question
+        let submitQuestion = question;
         let type;
+        if(testId!==null)
+            submitQuestion.testId=testId;
         if(questionType === questionTypes.MultipleChoice){
-            submitQuestion = {...submitQuestion, choices: choices}
+            submitQuestion.choices = choices;
             type = "MultipleChoice"
         } else {
-            submitQuestion = {...submitQuestion, answer: ffAnswer}
+            submitQuestion = ffAnswer
             type = "FreeForm"
         }
-        if(submitQuestion.TestQuestionId)
-            await submitEditQuestion({toSend: submitQuestion, type: type});
+        
+        if(testId>0) 
+            submitQuestion.testId = testId;
+        
+        if(Object.keys(editQuestion).length > 0)
+            await submitEditQuestion(submitQuestion, type);
         else 
-            await submitNewQuestion({toSend: submitQuestion, type: type});
-    }
-    const submitNewQuestion = async ({toSend, type}) => {
-        const token = await authService.getAccessToken();
-        await fetch(`api/admin/Question/${type}`, {
-            method : "POST",
-            headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
-            body : JSON.stringify({...toSend})
-        })
-            .then(response => response.json())
-            .then(data => console.log(data))
-            .catch(err => console.log(err));
-    }
-    
-    const submitEditQuestion = async ({toSend, type}) => {
-        const token = await authService.getAccessToken();
-        await fetch(`api/admin/Question/${type}`, {
-            method : "PUT",
-            headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
-            body : JSON.stringify({...toSend})
-        })
-            .then(response => {
-                if(response.ok)
-                    return response.json()
-                else
-                    throw Error (`Unable to send response. ${JSON.stringify(response)}`);
-            }).then(data => console.log(data))
-            .catch(err => console.log(err));
+            await submitNewQuestion(submitQuestion, type);
+        
+        callback(submitQuestion);
     }
     
     return(
-        <Form onSubmit={handleSubmit}>
+        <>
             <FormGroup floating={true}>
                 <Input id={"totalPointValue"}
                        name={"totalPointValue"}
@@ -270,7 +246,35 @@ export default function QuestionForm( { editQuestion = {} }) {
             {questionType===questionTypes.MultipleChoice
                 ? <MultipleChoice choices={choices} handleChoiceChange={handleMultipleChoiceChanges} choiceValidity={multipleChoiceValidity}/>
                 : <FreeFormQuestion answer={ffAnswer} handleAnswerChange={handleFreeFormChanges}/>}
-            <Button className={"btn btn-primary"} disabled={!submittable}>OK</Button>
-        </Form>
+            <Button className={"btn btn-primary"} disabled={!submittable} onClick={async e=>await handleSubmit(e)}>OK</Button>
+        </>
     );
+}
+
+async function submitNewQuestion(toSend, type) {
+    const token = await authService.getAccessToken();
+    await fetch(`api/admin/Question/${type}`, {
+        method : "POST",
+        headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
+        body : JSON.stringify(toSend)
+    })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(err => console.log(err));
+}
+
+async function submitEditQuestion (toSend, type) {
+    const token = await authService.getAccessToken();
+    await fetch(`api/admin/Question/${type}/${toSend.questionId}`, {
+        method : "PUT",
+        headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
+        body : JSON.stringify(toSend)
+    })
+        .then(response => {
+            if(response.ok)
+                return response.json()
+            else
+                throw Error (`Unable to send response. ${JSON.stringify(response)}`);
+        }).then(data => console.log(data))
+        .catch(err => console.log(err));
 }

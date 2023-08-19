@@ -130,8 +130,16 @@ public class QuestionController : ControllerBase {
         testQuestion.CreatedBy = GetCurrentUserId();
 
         var ffp = testQuestion.ToEntity();
+        if (ffp is null)
+            return BadRequest();
+        
         _context.FreeFormQuestions.Add(ffp);
-        await _context.SaveChangesAsync();
+        try {
+            await _context.SaveChangesAsync();
+        }
+        catch {
+            BadRequest();
+        }
 
         return CreatedAtAction("GetTestQuestion", new { id = testQuestion.TestQuestionId }, testQuestion);
     }

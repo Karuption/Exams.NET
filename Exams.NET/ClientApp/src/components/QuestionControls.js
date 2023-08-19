@@ -1,4 +1,4 @@
-import {Card, CardBody, Modal, ModalBody} from "reactstrap";
+import {Card, CardBody, CardHeader, CardSubtitle, Modal, ModalBody} from "reactstrap";
 import {useEffect} from "react";
 
 export function QuestionPopUp ({questions = [], onSelection=(e)=>{}, isOpen, toggle}){
@@ -24,6 +24,11 @@ export function QuestionSelector ({questions = [], onCardClick}) {
     return (
         questions.map(question => (
             <Card key={question.testQuestionId} onClick={()=>onCardClick(question)}>
+                <CardHeader>
+                    {
+                        <h6>Type: {question.choices? "Multiple Choice": "Free Answer"}</h6>
+                    }
+                </CardHeader>
                 <CardBody>
                     <QuestionTextView question={question}/>
                 </CardBody>

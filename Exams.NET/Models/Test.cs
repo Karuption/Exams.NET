@@ -22,7 +22,7 @@ public class TestCreationDto {
     public string? TestDescription { get; set; } = "";
     public DateTime? Created { get; set; }
     public DateTime? LastUpdated { get; set; }
-    public IList<TestQuestion>? Problems { get; set; }
+    public IList<TestQuestionDto>? Problems { get; set; }
 }
 
 public class UserTest {

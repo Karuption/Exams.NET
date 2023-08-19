@@ -5,7 +5,7 @@ import {
     CloseButton,
     Modal,
     ModalBody,
-    ModalHeader
+    ModalHeader, Spinner
 } from "reactstrap";
 import TestForm from "./TestAdminForm";
 import { FaEdit } from 'react-icons/fa';
@@ -20,17 +20,21 @@ export default function TestAdmin() {
     useEffect(()=> {populateTests()}, []);
     
     let table = loading
-        ? <p><em>Loading...</em></p>
-        : TestAdminTable(tests, (test)=>{
-            setSelectedTest(test);
-            setTestModal(!testModal);
-        }, (id)=>deleteTest(id));
-
+        ? <Spinner />
+        : <TestAdminTable tests={tests}
+                        editTest={(test)=>{
+                            setSelectedTest(test);
+                            setTestModal(!testModal);
+                            setHeaderText(`Edit: ${selectedTest.testTitle}`)
+                        }}
+                        deleteTest={(id)=>deleteTest(id)}
+                        loading={loading}/>
+    
     return (
         <div>
             <h1 id="tableLabel">Test Administration</h1>
             <p>This is for the high level administration of test.</p>
-            <button className={"btn btn-primary"} onClick={()=>{setSelectedTest({});setTestModal(!testModal);setHeaderText("Create New Test")}} >Create New Test</button>
+            <button className={"btn btn-primary"} onClick={()=>{setSelectedTest({});setTestModal(!testModal);}} >Create New Test</button>
             <Modal isOpen={testModal} toggle={()=>setTestModal(n=>!n)}>
                 <ModalHeader>{headerText}</ModalHeader>
                 <ModalBody>
@@ -41,40 +45,6 @@ export default function TestAdmin() {
             {table}
         </div>
     );
-    function TestAdminTable(tests, editTest, deleteTest) {
-        return (
-        <div>
-            <table className="table table-striped" aria-labelledby="tableLabel">
-                <thead>
-                <tr>
-                    <th>Test name</th>
-                    <th>Description</th>
-                    <th>Created</th>
-                    <th>Updated</th>
-                    <th className="d-flex align-items-center justify-content-end" style={{paddingRight: 12}}>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {
-                    Array.isArray(tests) && tests.map(test =>
-                    <tr key={test.testId} className={"align-middle"}>
-                            <td>{test.testTitle}</td>
-                            <td>{test.testDescription}</td>
-                            <td>{test.created}</td>
-                            <td>{test.lastUpdated}</td>
-                            <td className="d-flex align-items-center justify-content-end">
-                                <Button color="link" style={{paddingTop: '0', marginRight: 0}} onClick={() => {setHeaderText(`Edit: ${test.testTitle}`);editTest(test)}}>
-                                    <FaEdit style={{fontSize: 22}} />
-                                </Button>
-                                <CloseButton close onClick={() => deleteTest(test.testId)}/>
-                            </td>
-                        </tr>
-                    )
-                }
-                </tbody>
-            </table>
-        </div>);
-    }
 
     async function populateTests() {
         const token = await authService.getAccessToken();
@@ -88,7 +58,7 @@ export default function TestAdmin() {
             else
                 return res.json();
         })
-            .then(data => {setTests(data); setLoading(false);});
+            .then(data => {setTests(_=>[...data]); setLoading(_=>false);});
     }
 
 
@@ -101,4 +71,52 @@ export default function TestAdmin() {
             .then(res => res.ok&&populateTests())
             .catch(err => console.log(err));
     }
+}
+
+function TestAdminTable( { tests = [], editTest, deleteTest}) {
+    return (
+        <div>
+            <table className="table table-striped" aria-labelledby="tableLabel">
+                <thead>
+                <tr>
+                    <th>Test name</th>
+                    <th>Description</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th className="d-flex align-items-center justify-content-end" style={{paddingRight: 12}}>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {
+                    tests.length > 0
+                        ? tests.map((test,index) =>
+                            <TestTableEntry test={test} deleteTest={deleteTest} editTest={editTest} key={index} >
+                                <Button color="link" style={{paddingTop: '0', marginRight: 0}} onClick={_ => {editTest(test)}}>
+                                    <FaEdit style={{fontSize: 22}} />
+                                </Button>
+                                <CloseButton close onClick={_ => deleteTest(test.testId)}/>
+                            </TestTableEntry>
+                        )
+                        : <div className={'d-flex justify-content-center'}>
+                            <h5 color={'danger'}>No Tests</h5>
+                        </div>
+                }
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function TestTableEntry({test={},editTest, deleteTest, children}) {
+    return (
+        <tr key={test.testId} className={"align-middle"}>
+            <td>{test.testTitle}</td>
+            <td>{test.testDescription}</td>
+            <td>{test.created}</td>
+            <td>{test.lastUpdated}</td>
+            <td className="d-flex align-items-center justify-content-end">
+                {children}
+            </td>
+        </tr>
+    );
 }

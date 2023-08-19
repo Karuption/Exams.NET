@@ -17,6 +17,12 @@ public class TestAdministrationContext : DbContext {
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Test>()
+                    .HasMany<TestQuestion>(x=>x.Problems)
+                    .WithOne(x => x.Test)
+                    .HasForeignKey(x=>x.TestId)
+                    .OnDelete(DeleteBehavior.SetNull);
+        
         modelBuilder.Entity<MultipleChoiceProblem>()
                     .HasMany<Choice>()
                     .WithOne(e => e.TestQuestion as MultipleChoiceProblem);

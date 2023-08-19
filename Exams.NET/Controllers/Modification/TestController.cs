@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.JavaScript;
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
@@ -53,13 +54,39 @@ public class TestController : ControllerBase {
         if (id != test.TestId)
             return BadRequest();
 
-        var orig = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==test.TestId && 
+        var orig = await _testContext.Tests.Include(x=>x.Problems).FirstOrDefaultAsync(x=> x.TestId==test.TestId && 
                                                                    x.UserId==GetCurrentUserId(), cancellationToken: cancellationToken);
         if (orig == null)
             return NotFound();
 
         test.LastUpdated = DateTime.UtcNow;
         _testContext.Entry(orig).CurrentValues.SetValues(test);
+        
+        var problemsToRemove = orig.Problems.Where(problem => !test.Problems.Any(updatedProblem => updatedProblem.TestQuestionId == problem.TestQuestionId)).ToList();
+    
+        foreach (var problemToRemove in problemsToRemove)
+        {
+            var trackedProblem = await _testContext.TestQuestions.FirstOrDefaultAsync(x => x.TestQuestionId == problemToRemove.TestQuestionId, cancellationToken: cancellationToken);
+            if(trackedProblem is null)
+                continue;
+            trackedProblem.Test = null;
+            trackedProblem.TestId = null;
+            _testContext.Entry(trackedProblem).State = EntityState.Modified;
+            orig.Problems.Remove(trackedProblem);
+        }
+
+        foreach (var updatedProblem in test.Problems) {
+            var existingProblem = orig.Problems.FirstOrDefault(problem => problem.TestQuestionId == updatedProblem.TestQuestionId);
+            if (existingProblem is null) {
+                var trackedProblem = await _testContext.TestQuestions.FirstOrDefaultAsync(x => x.TestQuestionId == updatedProblem.TestQuestionId, cancellationToken: cancellationToken) ?? updatedProblem;
+                trackedProblem!.TestId = orig.TestId;
+                trackedProblem!.Test = orig;
+                _testContext.Entry(trackedProblem).State = EntityState.Modified;
+                orig.Problems.Add(trackedProblem);
+            } else
+                _testContext.Entry(existingProblem).CurrentValues.SetValues(updatedProblem);
+        }
+
         
         try {
             await _testContext.SaveChangesAsync(cancellationToken);

@@ -1,5 +1,7 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Exams.NET.Models; 
 
@@ -8,17 +10,22 @@ namespace Exams.NET.Models;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 public class TestQuestion {
     public string CreatedBy { get; set; }
+    [Key]
     public int TestQuestionId { get;set; }
+    public int? TestId { get; set; }
+    [JsonIgnore]
+    public Test? Test { get; set; }
     public string Prompt { get; set; }
     public decimal TotalPointValue { get; set; }
 }
 
-[JsonDerivedType(typeof(MultipleChoiceProblemDto), typeDiscriminator:"MultipleChoice")]
-[JsonDerivedType(typeof(FreeFormProblemDto), typeDiscriminator:"FreeForm")]
+[JsonDerivedType(typeof(MultipleChoiceProblemDto), typeDiscriminator: "MultipleChoice")]
+[JsonDerivedType(typeof(FreeFormProblemDto), typeDiscriminator: "FreeForm")]
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 public class TestQuestionDto {
     public string? CreatedBy { get; set; }
-    public int? TestQuestionId { get;set; }
+    public int? TestQuestionId { get; set; }
+    public int? TestId { get; set; }
     public string Prompt { get; set; }
     public int TotalPointValue { get; set; }
 }
