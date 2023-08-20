@@ -7,7 +7,7 @@ const MultipleChoice = ({ choices, handleChoiceChange, choiceValidity }) => {
     const [allowAdd, setAllowAdd] = useState(true);
     
     useEffect(()=>{
-        if(choiceValidity.some(x=>!x.isPointValid || !x.isDescriptionValid))
+        if(choiceValidity.some(x=>!x.isPointValueValid || !x.isDescriptionValid))
             return setAllowAdd(false);
         setAllowAdd(true);
     }, [choiceValidity])
@@ -23,8 +23,8 @@ const MultipleChoice = ({ choices, handleChoiceChange, choiceValidity }) => {
                                    type={"number"} 
                                    value={choice.choicePointValue}
                                    onChange={(e)=>handleChoiceChange(e, index)}
-                                   valid={choiceValidity[index].isPointValid} 
-                                   invalid={!choiceValidity[index].isPointValid}/>
+                                   valid={choiceValidity[index].isPointValueValid} 
+                                   invalid={!choiceValidity[index].isPointValueValid}/>
                             <Label for={"choicePointValue " + index + 1}>{alphabet[index]} Point Value</Label>
                             <FormFeedback valid={false}>{choiceValidity[index].pointErrorMessage}</FormFeedback>
                         </FormGroup>
@@ -37,7 +37,8 @@ const MultipleChoice = ({ choices, handleChoiceChange, choiceValidity }) => {
                                 onChange={(e)=>{handleChoiceChange(e, index)}}
                                 type="text"
                                 bsSize="sm" 
-                                invalid={!choiceValidity[index].isDescriptionValid}/>
+                                invalid={!choiceValidity[index].isDescriptionValid}
+                                value={choice.description}/>
                             <Label for={"Description " + index + 1}>Choice {alphabet[index]}</Label>
                             <FormFeedback valid={false}>{choiceValidity[index].descriptionError}</FormFeedback>
                         </FormGroup>
@@ -77,10 +78,10 @@ export default function QuestionForm( { testId = null, editQuestion = {}, callba
     });
     const [question, setQuestion] = useState({prompt:"", totalPointValue:0, ...editQuestion});
     const [questionValidity, setQuestionValidity] = useState({isPromptValid: true, isPointValueValid: true, promptError: "", pointValueError: ""});
-    const [questionType, setQuestionType] = useState(questionTypes.MultipleChoice);
-    const [choices, setChoices] = useState([{choicePointValue: 0,description:""}]);
-    const [ffAnswer, setFFAnswer] = useState("");
-    const [multipleChoiceValidity, setMultipleChoiceValidity] = useState([{isPromptValid:true,isPointValueValid:true,descriptionError:"",pointValueError:""}]);
+    const [questionType, setQuestionType] = useState(editQuestion.Type==="FreeForm"?questionTypes.FreeForm:questionTypes.MultipleChoice);
+    const [choices, setChoices] = useState(editQuestion?.choices !== undefined? [...editQuestion.choices]: [{choicePointValue: 0,description:""}]);
+    const [multipleChoiceValidity, setMultipleChoiceValidity] = useState(choices.map(x=>({isPromptValid:true,isPointValueValid:true,descriptionError:"",pointValueError:""})));
+    const [ffAnswer, setFFAnswer] = useState(editQuestion?.answer ?? "");
     
     const handleQuestionTypeChange = (event) => {
         event.preventDefault();
@@ -93,23 +94,23 @@ export default function QuestionForm( { testId = null, editQuestion = {}, callba
         const {name, value} = event.target;
         setQuestion({...question, [name]: value});
     }
-
+    
     // option validity
     useEffect(() => {
         const newValidity = [...multipleChoiceValidity];
         choices.map((choice, index)=> {
-            newValidity[index] = {...newValidity[index], isPointValid: true, isDescriptionValid: true};
+            newValidity[index] = {...newValidity[index], isPointValueValid: true, isDescriptionValid: true};
             
             if(choice.choicePointValue < 0)
                 newValidity[index] = {
                     ...newValidity[index],
-                    isPointValid: false,
+                    isPointValueValid: false,
                     pointErrorMessage: "Must be greater than 0"
                 };
             if(choice.choicePointValue > question.totalPointValue && question.totalPointValue >= 0)
                 newValidity[index] = {
                     ...newValidity[index],
-                    isPointValid: false,
+                    isPointValueValid: false,
                     pointErrorMessage: `Must be less than or equal to the total amount of question points: ${question.totalPointValue}`
                 };
             
@@ -145,6 +146,7 @@ export default function QuestionForm( { testId = null, editQuestion = {}, callba
             newQuestionValidity.isPointValueValid = choices.some(x=>x.choicePointValue ===question.totalPointValue);
             newQuestionValidity.pointValueError = "Multiple Choice questions must have at least one answer that will grant full credit";
         }
+        
         if(question.totalPointValue < 0) {
             newQuestionValidity.isPointValueValid = false;
             newQuestionValidity.pointValueError = "Point values must be non-negative";
@@ -163,19 +165,23 @@ export default function QuestionForm( { testId = null, editQuestion = {}, callba
         let submittable = false;
 
         if(questionType === questionTypes.MultipleChoice) {
-            submittable = multipleChoiceValidity.every(x => x.isPointValid && x.isDescriptionValid)
+            submittable = multipleChoiceValidity.every(x => x.isPointValueValid && x.isDescriptionValid)
             submittable &&= choices.some(x => x.choicePointValue === question.totalPointValue);
+        } else {
+            submittable = ffAnswer !== (editQuestion?.answer ?? "");
         }
-        else {
-            submittable = !(ffAnswer !== "");
+        
+        if(editQuestion?.Type !== null) {
+            submittable = submittable
+                || editQuestion.prompt !== question.prompt
+                || editQuestion.totalPointValue !== question.totalPointValue;
         }
 
         submittable = submittable 
                 && questionValidity.isPromptValid 
-                && questionValidity.isPointValueValid 
-                && (editQuestion !== question);
+                && questionValidity.isPointValueValid;
         setSubmittable(submittable);
-    }, [questionValidity, questionType, multipleChoiceValidity]);
+    }, [questionValidity, questionType, multipleChoiceValidity, ffAnswer]);
 
     async function handleSubmit(event) {
         event.preventDefault();
@@ -187,7 +193,7 @@ export default function QuestionForm( { testId = null, editQuestion = {}, callba
             submitQuestion.choices = choices;
             type = "MultipleChoice"
         } else {
-            submitQuestion = ffAnswer
+            submitQuestion.answer = ffAnswer
             type = "FreeForm"
         }
         
@@ -265,7 +271,7 @@ async function submitNewQuestion(toSend, type) {
 
 async function submitEditQuestion (toSend, type) {
     const token = await authService.getAccessToken();
-    await fetch(`api/admin/Question/${type}/${toSend.questionId}`, {
+    await fetch(`api/admin/Question/${type}`, {
         method : "PUT",
         headers : !token? {} : {'Authorization' : `Bearer ${token}`, 'Content-Type' : 'application/json'},
         body : JSON.stringify(toSend)

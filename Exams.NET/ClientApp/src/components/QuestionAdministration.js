@@ -14,10 +14,22 @@ export function QuestionAdministration() {
     const [qModal, setQModal] = useState(false);
     const [modalHeader, setModalHeader] = useState("");
     const [loading, setLoading] = useState(true);
+    const [editQuestion, setEditQuestion] = useState({});
     
     useEffect(() => {
             GetAllQuestions();
     }, []);
+
+    async function deleteQuestion(question) {
+        const token = await authService.getAccessToken();
+        setLoading(true);
+        await fetch(`api/admin/Question/${question.testQuestionId}`, {
+            method : "DELETE",
+            headers: !token?{}:{'Authorization' : `Bearer ${token}`}
+        })
+            .then(res => res.ok&&GetAllQuestions())
+            .catch(err => console.log(err));
+    }
 
     return (
         <div>
@@ -27,13 +39,14 @@ export function QuestionAdministration() {
                 <ItemAdministrationBody>
                     <button className={"btn btn-primary"} onClick={_ => {
                         setModalHeader("Create New Question");
-                        setQModal(true)
+                        setQModal(true);
+                        setEditQuestion(null);
                     }}>Create New Test Question
                     </button>
                     <Modal isOpen={qModal} toggle={_ => setQModal(n => !n)}>
                         <ModalHeader>{modalHeader}</ModalHeader>
                         <ModalBody>
-                            <QuestionForm />
+                            <QuestionForm editQuestion={editQuestion} callback={e=>{setEditQuestion(e);setQModal(!qModal);}}/>
                         </ModalBody>
                     </Modal>
                     <ItemAdministrationTable loading={loading} fallbackColumnSpan={"5"}>
@@ -51,12 +64,13 @@ export function QuestionAdministration() {
                                     questions.map((q, i) => (
                                         <ItemAdministrationRow key={i}>
                                             <ItemAdministrationBodyEntry>{i + 1}</ItemAdministrationBodyEntry>
-                                            <ItemAdministrationBodyEntry>{q.Type ? "Multiple Choice" : "Free Answer"}</ItemAdministrationBodyEntry>
+                                            <ItemAdministrationBodyEntry>{q.Type === "MultipleChoice" ? "Multiple Choice" : "Free Answer"}</ItemAdministrationBodyEntry>
                                             <ItemAdministrationBodyEntry>{q.prompt}</ItemAdministrationBodyEntry>
                                             <ItemAdministrationBodyEntry>{q.testId > 0 ? q.testId : "N/A"}</ItemAdministrationBodyEntry>
                                             <ItemAdministrationRowActions>
-                                                <Button className={'btn btn-primary d-flex align-items-center py-1 me-0 '}>edit</Button>
-                                                <CloseButton style={{fontSize: 23}} />
+                                                <Button className={'btn btn-primary d-flex align-items-center py-1 me-0'}
+                                                        onClick={_=>{setEditQuestion(q);setModalHeader("Edit");setQModal(true)}}>edit</Button>
+                                                <CloseButton style={{fontSize: 23}} onClick={_=>deleteQuestion(q)}/>
                                             </ItemAdministrationRowActions>
                                         </ItemAdministrationRow>
                                     ))
