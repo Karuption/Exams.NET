@@ -87,7 +87,7 @@ export function ItemAdministrationRow({children, ...restProps}) {
 export function ItemAdministrationRowActions({children, ...restProps}) {
     const actions = React.Children.toArray(children);
     return (
-        <td className={'d-flex align-items-end justify-content-end pe-2 gap-2'}>
+        <td className={'d-flex align-items-end justify-content-end gap-2'}>
             { children }
         </td>
     );

@@ -8,6 +8,8 @@ import {
     ItemAdministrationRow, ItemAdministrationRowActions, ItemAdministrationSubtitle, ItemAdministrationTable,
     ItemAdministrationTableBody, ItemAdministrationTableHeader
 } from "./ItemAdministration";
+import {FaEdit, FaPaperclip, FaSyncAlt} from "react-icons/fa";
+import {FaUpRightFromSquare, FaX} from "react-icons/fa6";
 
 export function QuestionAdministration() {
     const [questions, setQuestions] = useState([]);
@@ -66,11 +68,32 @@ export function QuestionAdministration() {
                                             <ItemAdministrationBodyEntry>{i + 1}</ItemAdministrationBodyEntry>
                                             <ItemAdministrationBodyEntry>{q.Type === "MultipleChoice" ? "Multiple Choice" : "Free Answer"}</ItemAdministrationBodyEntry>
                                             <ItemAdministrationBodyEntry>{q.prompt}</ItemAdministrationBodyEntry>
-                                            <ItemAdministrationBodyEntry>{q.testId > 0 ? q.testId : "N/A"}</ItemAdministrationBodyEntry>
+                                            <ItemAdministrationBodyEntry className={''}>
+                                                {
+                                                    q.testId > 0 
+                                                        ? <Button className={'btn btn-link d-flex align-items-center py-1 me-0 px-0'} 
+                                                                  onClick={x=>x}>
+                                                            <FaUpRightFromSquare fontSize={23} aria-label={"Go to Test Page"} />
+                                                        </Button>
+                                                        : <Button className={'btn btn-link d-flex align-items-center py-1 me-0 px-0'} 
+                                                                  onClick={x=>x}>
+                                                            <FaPaperclip fontSize={23} aria-label={"Assign Test"}/>
+                                                        </Button>
+                                                }
+                                            </ItemAdministrationBodyEntry>
                                             <ItemAdministrationRowActions>
-                                                <Button className={'btn btn-primary d-flex align-items-center py-1 me-0'}
-                                                        onClick={_=>{setEditQuestion(q);setModalHeader("Edit");setQModal(true)}}>edit</Button>
-                                                <CloseButton style={{fontSize: 23}} onClick={_=>deleteQuestion(q)}/>
+                                                <Button className={'btn btn-link d-flex align-items-center py-1 px-0'}
+                                                        onClick={x=>x}>
+                                                    <FaSyncAlt fontSize={23} aria-label={"Re-Assign Question"}/>
+                                                </Button>
+                                                <Button className={'btn btn-link d-flex align-items-center py-1 px-0'}
+                                                        onClick={_=>{setEditQuestion(q);setModalHeader("Edit");setQModal(true)}}>
+                                                    <FaEdit fontSize={23} aria-label={"Edit Question"}/>
+                                                </Button>
+                                                <Button className={'btn btn-link d-flex align-items-center py-1 ps-0'}
+                                                        onClick={_=>deleteQuestion(q)}>
+                                                    <FaX fontSize={23} aria-label={"Delete Question"}/>
+                                                </Button>
                                             </ItemAdministrationRowActions>
                                         </ItemAdministrationRow>
                                     ))
