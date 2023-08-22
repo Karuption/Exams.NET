@@ -48,7 +48,7 @@ export function QuestionAdministration() {
                     <Modal isOpen={qModal} toggle={_ => setQModal(n => !n)}>
                         <ModalHeader>{modalHeader}</ModalHeader>
                         <ModalBody>
-                            <QuestionForm editQuestion={editQuestion} callback={e=>{setEditQuestion(e);setQModal(!qModal);}}/>
+                            <QuestionForm editQuestion={editQuestion} callback={e=>{setEditQuestion(e);setQModal(!qModal);GetAllQuestions()}}/>
                         </ModalBody>
                     </Modal>
                     <ItemAdministrationTable loading={loading} fallbackColumnSpan={"5"}>
