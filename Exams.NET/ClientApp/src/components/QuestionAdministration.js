@@ -9,7 +9,7 @@ import {
     ItemAdministrationTableBody, ItemAdministrationTableHeader
 } from "./ItemAdministration";
 import {FaEdit, FaPaperclip, FaSyncAlt} from "react-icons/fa";
-import {FaUpRightFromSquare, FaX} from "react-icons/fa6";
+import {FaL, FaRotateLeft, FaUpRightFromSquare, FaX} from "react-icons/fa6";
 import {TestSelector} from "../TestSelector";
 
 export function QuestionAdministration() {
@@ -100,6 +100,14 @@ export function QuestionAdministration() {
                                             }
                                         </ItemAdministrationBodyEntry>
                                         <ItemAdministrationRowActions>
+                                            {
+                                                q.testId > 0
+                                                    ? <Button className={'btn btn-link d-flex align-items-center py-1 px-0'}
+                                                              onClick={_=>{delete q.testId;updateQuestion();}}>
+                                                        <FaRotateLeft fontSize={23} aria-label={"Remove Question from test"}/>
+                                                    </Button>
+                                                    : <></>
+                                            }
                                             <Button className={'btn btn-link d-flex align-items-center py-1 px-0'}
                                                     onClick={_=>attachModal(q)}>
                                                 <FaSyncAlt fontSize={23} aria-label={"Re-Assign Question"}/>
