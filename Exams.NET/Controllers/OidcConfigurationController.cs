@@ -4,12 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Exams.NET.Controllers;
 
 public class OidcConfigurationController : Controller {
-    private readonly ILogger<OidcConfigurationController> _logger;
-
-    public OidcConfigurationController(IClientRequestParametersProvider clientRequestParametersProvider,
-                                       ILogger<OidcConfigurationController> logger) {
+    public OidcConfigurationController(IClientRequestParametersProvider clientRequestParametersProvider) {
         ClientRequestParametersProvider = clientRequestParametersProvider;
-        _logger = logger;
     }
 
     public IClientRequestParametersProvider ClientRequestParametersProvider { get; }

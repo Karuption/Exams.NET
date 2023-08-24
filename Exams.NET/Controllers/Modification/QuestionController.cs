@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
@@ -21,10 +20,6 @@ public class QuestionController : ControllerBase {
     // GET: api/Question
     [HttpGet]
     public async Task<ActionResult<IEnumerable<TestQuestion>>> GetTestQuestions() {
-        if (_context?.MultipleChoiceQuestions is null || _context?.FreeFormQuestions is null)
-            return await Task.FromResult<ActionResult<IEnumerable<TestQuestion>>>(NotFound());
-
-
         return await _context.TestQuestions
                 .Where(x => x.CreatedBy == GetCurrentUserId())
                 .ToListAsync();
@@ -33,10 +28,6 @@ public class QuestionController : ControllerBase {
     [HttpGet]
     [Route("Unassigned")]
     public async Task<ActionResult<IEnumerable<TestQuestion>>> GetUnassignedTestQuestions() {
-        if (_context?.MultipleChoiceQuestions is null || _context?.FreeFormQuestions is null)
-            return await Task.FromResult<ActionResult<IEnumerable<TestQuestion>>>(NotFound());
-
-
         return await _context.TestQuestions
                              .Where(x => x.CreatedBy == GetCurrentUserId() && default == (x.TestId ?? default))
                              .ToListAsync();
@@ -45,9 +36,6 @@ public class QuestionController : ControllerBase {
     // GET: api/Question/5
     [HttpGet("{id}")]
     public async Task<ActionResult<TestQuestion>> GetTestQuestion(int id) {
-        if (_context?.MultipleChoiceQuestions is null)
-            return NotFound();
-        
         var question = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId());
         if (question is null) 
             return NotFound();
@@ -58,17 +46,13 @@ public class QuestionController : ControllerBase {
     [HttpPut]
     [Route("MultipleChoice")]
     public async Task<IActionResult> PutTestQuestion([FromBody]MultipleChoiceProblem testQuestion) {
-        if (_context?.MultipleChoiceQuestions is null)
-            return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        return await updateQuestion(testQuestion);
+        return await UpdateQuestion(testQuestion);
     }
     
     [HttpPut]
     [Route("FreeForm")]
     public async Task<IActionResult> PutTestQuestion([FromBody]FreeFormProblem testQuestion) {
-        if (_context?.MultipleChoiceQuestions is null)
-            return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        return await updateQuestion(testQuestion);
+        return await UpdateQuestion(testQuestion);
     }
 
     // POST: api/Question
@@ -76,9 +60,6 @@ public class QuestionController : ControllerBase {
     [HttpPost]
     [Route("MultipleChoice")]
     public async Task<ActionResult<TestQuestion>> PostTestQuestion(MultipleChoiceProblemDto testQuestion) {
-        if (_context?.MultipleChoiceQuestions is null)
-            return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
@@ -98,9 +79,6 @@ public class QuestionController : ControllerBase {
     [HttpPost]
     [Route("FreeForm")]
     public async Task<ActionResult<TestQuestion>> PostTestQuestion(FreeFormProblemDto testQuestion) {
-        if (_context?.MultipleChoiceQuestions is null)
-            return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
@@ -122,9 +100,6 @@ public class QuestionController : ControllerBase {
     // DELETE: api/Question/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTestQuestion(int id) {
-        if (_context?.MultipleChoiceQuestions == null)
-            return NotFound();
-        
         var testQuestion = await _context.TestQuestions.FindAsync(id);
         if (testQuestion == null)
             return NotFound();
@@ -135,15 +110,15 @@ public class QuestionController : ControllerBase {
         return NoContent();
     }
 
-    private async Task<IActionResult> updateQuestion(TestQuestion testQuestion) {
-        if ((testQuestion?.TestQuestionId ?? default) == default)
+    private async Task<IActionResult> UpdateQuestion(TestQuestion testQuestion) {
+        if (testQuestion.TestQuestionId == default)
             return BadRequest();
         
-        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion!.TestQuestionId);
+        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion.TestQuestionId);
         if (orig is null)
             return NotFound();
         
-        _context.Entry(orig).CurrentValues.SetValues(testQuestion!);
+        _context.Entry(orig).CurrentValues.SetValues(testQuestion);
 
         try { 
             await _context.SaveChangesAsync();
@@ -158,7 +133,7 @@ public class QuestionController : ControllerBase {
     }
 
     private bool TestQuestionExists(int id) {
-        return (_context.TestQuestions?.Any(e => e.TestQuestionId == id)).GetValueOrDefault();
+        return _context.TestQuestions.Any(e => e.TestQuestionId == id);
     }
     
     private string GetCurrentUserId() {

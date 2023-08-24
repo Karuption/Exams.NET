@@ -1,13 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Exams.NET.Models; 
 
 public class Test {
     public int TestId { get; set; }
-    public string UserId { get; set; }
+    public string UserId { get; set; } = "";
     public string TestTitle { get; set; } = "";
     public string TestDescription { get; set; } = "";
     public DateTime Created { get; set; }
@@ -35,14 +34,14 @@ public class UserTest {
 [JsonDerivedType(typeof(UserMultipleChoiceQuestion), typeDiscriminator:"MultipleChoice")]
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 public class UserTestQuestion {
-    public string CreatedBy { get; set; }
+    public string CreatedBy { get; set; } = "";
     public int TestQuestionId { get;set; }
-    public string Prompt { get; set; }
+    public string Prompt { get; set; } = "";
     public decimal TotalPointValue { get; set; }
 }
 
 public class UserMultipleChoiceQuestion : UserTestQuestion {
-    public List<UserChoice?> Choices { get; set; }
+    public List<UserChoice?> Choices { get; set; } = new();
 }
 
 public class UserChoice {
@@ -56,8 +55,9 @@ public class UserTestQuestionAnswer {
     public Guid Id { get; set; }
     [ForeignKey(nameof(TestQuestion))]
     public int QuestionId { get; set; }
-    public string Answer { get; set; }
-    public string UserId { get; set; }
+
+    public string Answer { get; set; } = "";
+    public string UserId { get; set; } = "";
 }
 
 public class UserTestQuestionAnswerCreationDto {
@@ -65,6 +65,7 @@ public class UserTestQuestionAnswerCreationDto {
     public Guid? Id { get; set; }
     [ForeignKey(nameof(TestQuestion))]
     public int QuestionId { get; set; }
-    public string Answer { get; set; }
+
+    public string Answer { get; set; } = "";
     public string? UserId { get; set; }
 }

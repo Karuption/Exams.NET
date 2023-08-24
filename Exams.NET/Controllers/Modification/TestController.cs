@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
@@ -21,9 +20,6 @@ public class TestController : ControllerBase {
     // GET: api/Tests
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken cancellationToken = default) {
-        if (_testContext?.Tests == null)
-            return NotFound();
-        
         var tests = _testContext.Tests.Where(x=> x.UserId == GetCurrentUserId())
                                 .Include(x=>x.Problems);
 
@@ -36,8 +32,6 @@ public class TestController : ControllerBase {
     // GET: api/Tests/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Test>> GetTest(int id, CancellationToken cancellationToken = default) {
-        if (_testContext?.Tests == null)
-            return NotFound();
         var test = await _testContext.Tests.Include(x=>x.Problems)
                                      .FirstOrDefaultAsync(x=>x.UserId == GetCurrentUserId() && x.TestId == id, cancellationToken: cancellationToken);
 
@@ -62,9 +56,9 @@ public class TestController : ControllerBase {
         test.LastUpdated = DateTime.UtcNow;
         _testContext.Entry(orig).CurrentValues.SetValues(test);
         
-        var problemsToRemove = orig.Problems.Where(problem => !test.Problems.Any(updatedProblem => updatedProblem.TestQuestionId == problem.TestQuestionId)).ToList();
+        var problemsToRemove = orig.Problems?.Where(problem => test.Problems!.Any(updatedProblem => updatedProblem.TestQuestionId == problem.TestQuestionId)).ToList();
     
-        foreach (var problemToRemove in problemsToRemove)
+        foreach (var problemToRemove in problemsToRemove!)
         {
             var trackedProblem = await _testContext.TestQuestions.FirstOrDefaultAsync(x => x.TestQuestionId == problemToRemove.TestQuestionId, cancellationToken: cancellationToken);
             if(trackedProblem is null)
@@ -72,17 +66,17 @@ public class TestController : ControllerBase {
             trackedProblem.Test = null;
             trackedProblem.TestId = null;
             _testContext.Entry(trackedProblem).State = EntityState.Modified;
-            orig.Problems.Remove(trackedProblem);
+            orig.Problems?.Remove(trackedProblem);
         }
 
-        foreach (var updatedProblem in test.Problems) {
-            var existingProblem = orig.Problems.FirstOrDefault(problem => problem.TestQuestionId == updatedProblem.TestQuestionId);
+        foreach (var updatedProblem in test.Problems!) {
+            var existingProblem = orig.Problems?.FirstOrDefault(problem => problem.TestQuestionId == updatedProblem.TestQuestionId);
             if (existingProblem is null) {
                 var trackedProblem = await _testContext.TestQuestions.FirstOrDefaultAsync(x => x.TestQuestionId == updatedProblem.TestQuestionId, cancellationToken: cancellationToken) ?? updatedProblem;
-                trackedProblem!.TestId = orig.TestId;
-                trackedProblem!.Test = orig;
+                trackedProblem.TestId = orig.TestId;
+                trackedProblem.Test = orig;
                 _testContext.Entry(trackedProblem).State = EntityState.Modified;
-                orig.Problems.Add(trackedProblem);
+                orig.Problems?.Add(trackedProblem);
             } else
                 _testContext.Entry(existingProblem).CurrentValues.SetValues(updatedProblem);
         }
@@ -109,9 +103,6 @@ public class TestController : ControllerBase {
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
     public async Task<ActionResult<Test>> PostTest(TestCreationDto testCreation, CancellationToken cancellationToken = default) {
-        if (_testContext?.Tests == null)
-            return Problem("Entity set 'TestAdministrationContext.Tests'  is null.");
-
         testCreation.UserId = GetCurrentUserId();
         testCreation.LastUpdated = testCreation.Created = DateTime.UtcNow;
         
@@ -124,8 +115,6 @@ public class TestController : ControllerBase {
     // DELETE: api/Tests/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTest(int id, CancellationToken cancellationToken = default) {
-        if (_testContext?.Tests == null)
-            return NotFound();
         var test = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==id 
                                                                     && x.UserId == GetCurrentUserId(), cancellationToken: cancellationToken);
         if (test == null)
@@ -138,7 +127,7 @@ public class TestController : ControllerBase {
     }
 
     private bool TestExists(int id) {
-        return (_testContext.Tests?.Any(e => e.TestId == id)).GetValueOrDefault();
+        return _testContext.Tests.Any(e => e.TestId == id);
     }
     private string GetCurrentUserId() {
         return HttpContext.User.Claims.FirstOrDefault(c=>c.Type == ClaimTypes.NameIdentifier)?.Value ?? "";

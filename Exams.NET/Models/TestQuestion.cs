@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace Exams.NET.Models; 
 
@@ -9,13 +8,14 @@ namespace Exams.NET.Models;
 [JsonDerivedType(typeof(FreeFormProblem), typeDiscriminator:"FreeForm")]
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "Type")]
 public class TestQuestion {
-    public string CreatedBy { get; set; }
+    public string CreatedBy { get; set; } = "";
     [Key]
     public int TestQuestionId { get;set; }
     public int? TestId { get; set; }
     [JsonIgnore]
     public Test? Test { get; set; }
-    public string Prompt { get; set; }
+
+    public string Prompt { get; set; } = "";
     public decimal TotalPointValue { get; set; }
 }
 
@@ -26,7 +26,7 @@ public class TestQuestionDto {
     public string? CreatedBy { get; set; }
     public int? TestQuestionId { get; set; }
     public int? TestId { get; set; }
-    public string Prompt { get; set; }
+    public string Prompt { get; set; } = "";
     public int TotalPointValue { get; set; }
 }
 
@@ -57,8 +57,9 @@ public class ChoiceDto {
 public class Choice {
     public Guid Id { get; set; }
     public int TestQuestionID { get; set; }
-    [System.Text.Json.Serialization.JsonIgnore]
-    public TestQuestion TestQuestion { get; set; }
+
+    [JsonIgnore]
+    public TestQuestion TestQuestion { get; set; } = null!;
     public required string Description { get; set; }
-    public decimal ChoicePointValue { get; set; } = 0;
+    public decimal ChoicePointValue { get; set; }
 }

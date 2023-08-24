@@ -4,7 +4,6 @@ using Exams.NET.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Common;
 
 namespace Exams.NET.Controllers; 
 
@@ -31,11 +30,11 @@ public class UserAnswerController : Controller {
     }
     
     [HttpGet]
-    [Route("{TestId:int}")]
-    public async Task<ActionResult<IEnumerable<UserTestQuestionAnswer>>> GetAnswers(int TestId) {
+    [Route("{testId:int}")]
+    public async Task<ActionResult<IEnumerable<UserTestQuestionAnswer>>> GetAnswers(int testId) {
         var test = await _context.Tests.AsNoTracking()
                                  .Include(test => test.Problems)
-                                 .FirstOrDefaultAsync(x => x.TestId == TestId);
+                                 .FirstOrDefaultAsync(x => x.TestId == testId);
         if (test is null) 
             return BadRequest();
 
@@ -67,7 +66,7 @@ public class UserAnswerController : Controller {
         try {
             await _context.SaveChangesAsync();
         }
-        catch(DbUpdateConcurrencyException err) {
+        catch(DbUpdateConcurrencyException) {
             if (!_context.UserAnswers.Any(x => x.Id == id))
                 return NotFound();
             throw;

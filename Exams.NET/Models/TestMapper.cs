@@ -8,8 +8,8 @@ public static partial class TestMapper {
 
     public static partial UserTest ToUser(this Test test);
     
-    public static partial FreeFormProblem ToEntity(this FreeFormProblemDto testQuestion);
-    public static partial MultipleChoiceProblem ToEntity(this MultipleChoiceProblemDto testQuestion);
+    public static partial FreeFormProblem? ToEntity(this FreeFormProblemDto testQuestion);
+    public static partial MultipleChoiceProblem? ToEntity(this MultipleChoiceProblemDto testQuestion);
 
 
     public static UserTestQuestion ToUserQuestion(this TestQuestion testQuestion) {

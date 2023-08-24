@@ -1,4 +1,3 @@
-using System.Collections.Specialized;
 using Exams.NET.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,11 +7,11 @@ public class TestAdministrationContext : DbContext {
     public TestAdministrationContext(DbContextOptions<TestAdministrationContext> options)
         : base(options) { }
 
-    public DbSet<Test> Tests { get; set; }
-    public DbSet<MultipleChoiceProblem> MultipleChoiceQuestions { get; set; }
-    public DbSet<FreeFormProblem> FreeFormQuestions { get; set; }
-    public DbSet<TestQuestion> TestQuestions { get; set; }
-    public DbSet<UserTestQuestionAnswer> UserAnswers { get; set; }
+    public DbSet<Test> Tests { get; set; } = null!;
+    public DbSet<MultipleChoiceProblem> MultipleChoiceQuestions { get; set; } = null!;
+    public DbSet<FreeFormProblem> FreeFormQuestions { get; set; } = null!;
+    public DbSet<TestQuestion> TestQuestions { get; set; } = null!;
+    public DbSet<UserTestQuestionAnswer> UserAnswers { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         base.OnModelCreating(modelBuilder);
