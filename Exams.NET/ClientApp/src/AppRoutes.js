@@ -1,8 +1,9 @@
 import ApiAuthorzationRoutes from './components/api-authorization/ApiAuthorizationRoutes';
-import { FetchData } from "./components/FetchData";
-import { Home } from "./components/Home";
+import {Home} from "./components/Home";
 import TestAdmin from "./components/TestAdmin";
-import QuestionForm from "./components/QuestionForm";
+import UserTest from "./components/UserTest";
+import {QuestionAdministration} from "./components/QuestionAdministration";
+import {TestSelector} from "./TestSelector";
 
 const AppRoutes = [
   {
@@ -10,19 +11,19 @@ const AppRoutes = [
     element: <Home />
   },
   {
-    path: '/fetch-data',
-    requireAuth: true,
-    element: <FetchData />
-  },
-  {
-    path: 'testAdmin',
+    path: '/testAdmin',
     requireAuth: true,
     element: <TestAdmin />
   },
   {
-    path: '/questions',
+    path: '/questionAdmin',
     requireAuth: true,
-    element: <QuestionForm />
+    element: <QuestionAdministration />
+  },
+  {
+    path: '/Test',
+    requireAuth: true,
+    element: <UserTest testId={1} />
   },
   ...ApiAuthorzationRoutes
 ];
