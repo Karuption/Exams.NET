@@ -3,7 +3,6 @@ import {Home} from "./components/Home";
 import TestAdmin from "./components/TestAdmin";
 import UserTest from "./components/UserTest";
 import {QuestionAdministration} from "./components/QuestionAdministration";
-import {TestSelector} from "./TestSelector";
 
 const AppRoutes = [
   {

@@ -1,6 +1,6 @@
 import authService from "./api-authorization/AuthorizeService";
-import React, {Suspense, useCallback, useEffect, useState} from "react";
-import {Button, CloseButton, Modal, ModalBody, ModalHeader, Spinner} from "reactstrap";
+import React, {Suspense, useEffect, useState} from "react";
+import {Button, Modal, ModalBody, ModalHeader, Spinner} from "reactstrap";
 import QuestionForm from "./QuestionForm";
 import {
     ItemAdministration, ItemAdministrationBody,
@@ -9,7 +9,7 @@ import {
     ItemAdministrationTableBody, ItemAdministrationTableHeader
 } from "./ItemAdministration";
 import {FaEdit, FaPaperclip, FaSyncAlt} from "react-icons/fa";
-import {FaL, FaRotateLeft, FaUpRightFromSquare, FaX} from "react-icons/fa6";
+import {FaRotateLeft, FaUpRightFromSquare, FaX} from "react-icons/fa6";
 import {TestSelector} from "../TestSelector";
 
 export function QuestionAdministration() {
@@ -25,10 +25,10 @@ export function QuestionAdministration() {
             GetAllQuestions();
     }, []);
 
-    const questionCallback = useCallback(async (question, test) => {
+    const questionCallback = async (question, test) => {
         question.testId = test.testId;
         updateQuestion(question);
-    }, [updateQuestion]);
+    };
 
     async function deleteQuestion(question) {
         const token = await authService.getAccessToken();

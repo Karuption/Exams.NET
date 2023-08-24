@@ -1,17 +1,16 @@
 import {Suspense, useEffect, useState} from "react";
 import authService from "./components/api-authorization/AuthorizeService";
-import {Card, CardBody, CardHeader, CardSubtitle, Spinner} from "reactstrap";
+import {Card, CardBody, CardHeader, Spinner} from "reactstrap";
 
 export function TestSelector({callback, viewOnly=false,testId=0}) {
     const [tests, setTests] = useState([]);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if(viewOnly)
             GetTest(testId);
         else 
             GetAllTests();
-    }, []);
+    }, [viewOnly,testId]);
     
     
     return (
@@ -38,7 +37,7 @@ export function TestSelector({callback, viewOnly=false,testId=0}) {
             else
                 return res.json();
         })
-            .then(data => {setTests(data);setLoading(false);});
+            .then(data => {setTests(data);});
     }
     
     async function GetTest(testId) {
@@ -51,7 +50,7 @@ export function TestSelector({callback, viewOnly=false,testId=0}) {
             else
                 return res.json();
         })
-            .then(data => {setTests([data]);setLoading(false);});
+            .then(data => {setTests([data]);});
     }
 }
 
