@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
@@ -54,54 +55,20 @@ public class QuestionController : ControllerBase {
         return question;
     }
     
+    [HttpPut]
     [Route("MultipleChoice")]
-    public async Task<IActionResult> PutTestQuestion(MultipleChoiceProblem testQuestion) {
+    public async Task<IActionResult> PutTestQuestion([FromBody]MultipleChoiceProblem testQuestion) {
         if (_context?.MultipleChoiceQuestions is null)
             return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        if ((testQuestion?.TestQuestionId ?? default) != default)
-            return BadRequest();
-        
-        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion!.TestQuestionId);
-        if (orig is null)
-            return NotFound();
-        
-        _context.Entry(orig).CurrentValues.SetValues(testQuestion!);
-
-        try { 
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException) {
-            if (!TestQuestionExists(testQuestion.TestQuestionId))
-                return NotFound();
-            throw;
-        }
-        
-        return NoContent();
+        return await updateQuestion(testQuestion);
     }
     
+    [HttpPut]
     [Route("FreeForm")]
-    public async Task<IActionResult> PutTestQuestion(FreeFormProblem testQuestion) {
+    public async Task<IActionResult> PutTestQuestion([FromBody]FreeFormProblem testQuestion) {
         if (_context?.MultipleChoiceQuestions is null)
             return Problem("Entity set 'TestAdministrationContext.TestQuestions'  is null.");
-        if ((testQuestion?.TestQuestionId ?? default) == default)
-            return BadRequest();
-        
-        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion!.TestQuestionId);
-        if (orig is null)
-            return NotFound();
-        
-        _context.Entry(orig).CurrentValues.SetValues(testQuestion!);
-
-        try { 
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException) {
-            if (!TestQuestionExists(testQuestion!.TestQuestionId))
-                return NotFound();
-            throw;
-        }
-        
-        return NoContent();
+        return await updateQuestion(testQuestion);
     }
 
     // POST: api/Question
@@ -165,6 +132,28 @@ public class QuestionController : ControllerBase {
         _context.TestQuestions.Remove(testQuestion);
         await _context.SaveChangesAsync();
 
+        return NoContent();
+    }
+
+    private async Task<IActionResult> updateQuestion(TestQuestion testQuestion) {
+        if ((testQuestion?.TestQuestionId ?? default) == default)
+            return BadRequest();
+        
+        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion!.TestQuestionId);
+        if (orig is null)
+            return NotFound();
+        
+        _context.Entry(orig).CurrentValues.SetValues(testQuestion!);
+
+        try { 
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException) {
+            if (!TestQuestionExists(testQuestion.TestQuestionId))
+                return NotFound();
+            throw;
+        }
+        
         return NoContent();
     }
 
