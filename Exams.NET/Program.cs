@@ -16,7 +16,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
        .AddEntityFrameworkStores<ApplicationDbContext>();
 
-builder.Services.AddDbContext<TestAdministrationContext>(opt => opt.UseSqlite(connectionString));
+builder.Services.AddDbContext<TestAdministrationContext>(opt => opt.UseSqlite(connectionString))
+       .AddDbContext<TestSharingContext>(opt => opt.UseSqlite(connectionString));
 
 builder.Services.AddIdentityServer()
        .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
