@@ -8,7 +8,8 @@ import {
     ModalHeader, Spinner
 } from "reactstrap";
 import TestForm from "./TestAdminForm";
-import { FaEdit } from 'react-icons/fa';
+import {FaEdit, FaLink} from 'react-icons/fa';
+import {FaShareNodes, FaX} from "react-icons/fa6";
 
 export default function TestAdmin() {
     const [tests, setTests] = useState([])
@@ -91,10 +92,18 @@ function TestAdminTable( { tests = [], editTest, deleteTest}) {
                     tests.length > 0
                         ? tests.map((test,index) =>
                             <TestTableEntry test={test} deleteTest={deleteTest} editTest={editTest} key={index} >
-                                <Button color="link" style={{paddingTop: '0', marginRight: 0}} onClick={_ => {editTest(test)}}>
+                                <Button color={'link'} className={'pt-0 pe-1'} aria-label={"share"} 
+                                        onClick={_=>_}>
+                                    <FaShareNodes style={{fontSize: 22}} />
+                                </Button>
+                                <Button color="link" className={'pt-0 pe-1'} aria-label={"Edit"} 
+                                        onClick={_ => {editTest(test)}}>
                                     <FaEdit style={{fontSize: 22}} />
                                 </Button>
-                                <CloseButton close onClick={_ => deleteTest(test.testId)}/>
+                                <Button color={'link'} className={'pt-0 px-0'} aria-label={'delete'} 
+                                        onClick={_ => deleteTest(test.testId)}>
+                                    <FaX style={{fontSize: 22}}/>
+                                </Button>
                             </TestTableEntry>
                         )
                         : <div className={'d-flex justify-content-center'}>
