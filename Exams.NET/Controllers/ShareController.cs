@@ -61,8 +61,8 @@ public class ShareController: ControllerBase {
     }
 
     [HttpGet("{ownerId}/{testId}/{shareId}")]
-    public async Task<IActionResult> GetTestShare(string ownerId, int testId, string shareIdRaw, CancellationToken ct = default) {
-        if (string.IsNullOrWhiteSpace(ownerId) || testId == default || !Guid.TryParse(shareIdRaw, out var shareId))
+    public async Task<IActionResult> GetTestShare(string ownerId, int testId, Guid shareId, CancellationToken ct = default) {
+        if (string.IsNullOrWhiteSpace(ownerId) || testId == default)
             return NotFound();
 
         // make sure the creator exists
@@ -72,7 +72,7 @@ public class ShareController: ControllerBase {
 
         // make sure that the test exists
         var test = await _testContext.Tests.AsNoTracking().FirstOrDefaultAsync(x=>x.TestId == testId, ct);
-        if (test is null || test.UserId == owner.Id)
+        if (test is null || test.UserId != owner.Id)
             return NotFound();
 
         // make sure that all of the user provided information adds up

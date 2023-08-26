@@ -99,7 +99,7 @@ export default function TestAdmin() {
 }
 
 function TestAdminTable({ tests = [], editTest, deleteTest }) {
-   const [modal, setModal] = useState(true);
+   const [modal, setModal] = useState(false);
 
    const ShareButton = ({ test = null }) => {
       const [copied, setCopied] = useState(false);
@@ -129,7 +129,7 @@ function TestAdminTable({ tests = [], editTest, deleteTest }) {
             .then(async (data) => await setShareId(data));
       }
 
-      const shareableUrl = `${window.origin}/api/${test?.userId}/${test.testId}/${shareId}`;
+      const shareableUrl = `${window.origin}/api/share/${test?.userId}/${test.testId}/${shareId}`;
 
       const copyToClipboard = () => {
          navigator.clipboard
