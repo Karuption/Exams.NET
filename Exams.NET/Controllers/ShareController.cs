@@ -14,9 +14,9 @@ namespace Exams.NET.Controllers;
 public class ShareController: ControllerBase {
     private readonly TestSharingContext _shareContext;
     private readonly TestAdministrationContext _testContext;
-    private readonly IdentityUserContext<ApplicationUser> _userContext;
+    private readonly ApplicationDbContext _userContext;
     
-    public ShareController(TestSharingContext shareContext, IdentityUserContext<ApplicationUser> userContext, TestAdministrationContext testContext) {
+    public ShareController(TestSharingContext shareContext, ApplicationDbContext userContext, TestAdministrationContext testContext) {
         _shareContext = shareContext;
         _userContext = userContext;
         _testContext = testContext;
@@ -45,7 +45,7 @@ public class ShareController: ControllerBase {
         //check if its already shared
         var shareInfo = await _shareContext.TestShareInfo.FirstOrDefaultAsync(x => x.testId == test.TestId, ct);
         if (shareInfo is not null)
-            return NoContent();
+            return Ok(shareInfo.Id);
 
         // if not, try and add it.
         shareInfo = new() { shared = true, testId = test.TestId, OwnerId = test.UserId };
@@ -53,7 +53,7 @@ public class ShareController: ControllerBase {
 
         try {
             await _shareContext.SaveChangesAsync(ct);
-            return NoContent();
+            return Ok(shareInfo.Id);
         }
         catch {
             return Problem();
@@ -61,8 +61,8 @@ public class ShareController: ControllerBase {
     }
 
     [HttpGet("{ownerId}/{testId}/{shareId}")]
-    public async Task<IActionResult> GetTestShare(string ownerId, int testId, Guid shareId, CancellationToken ct = default) {
-        if (string.IsNullOrWhiteSpace(ownerId) || testId == default)
+    public async Task<IActionResult> GetTestShare(string ownerId, int testId, string shareIdRaw, CancellationToken ct = default) {
+        if (string.IsNullOrWhiteSpace(ownerId) || testId == default || !Guid.TryParse(shareIdRaw, out var shareId))
             return NotFound();
 
         // make sure the creator exists
