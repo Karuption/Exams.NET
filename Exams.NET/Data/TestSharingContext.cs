@@ -1,5 +1,7 @@
+using Exams.NET.Models;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace Exams.NET.Data; 
 
@@ -22,7 +24,9 @@ public class TestShare {
 
 public class SharedTest {
     public Guid Id { get; set; }
-    public int testId { get; set; }
+    public int TestId { get; set; }
+    [JsonIgnore]
+    public Test Test { get; set; }
     public string OwnerId { get; set; }
-    public bool shared { get; set; }
+    public bool Shared { get; set; }
 }

@@ -22,6 +22,14 @@ public class ShareController: ControllerBase {
         _testContext = testContext;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Test>>> GetSharedTests(CancellationToken ct = default) {
+         return await _shareContext.TestShares.Include(x=>x.SharedTest.Test)
+                                          .Where(x => x.AllowedUserId == GetCurrentUserId() && x.SharedTest.Shared)
+                                          .Select(x=>x.SharedTest.Test)
+                                          .ToListAsync(ct);
+    }
+    
     [HttpPost]
     public async Task<IActionResult> CreateTestShareLink(Test userTest, CancellationToken ct) {
         return await createTestShare(userTest.TestId, GetCurrentUserId(), ct);
@@ -43,12 +51,12 @@ public class ShareController: ControllerBase {
             return NotFound("Test not found");
 
         //check if its already shared
-        var shareInfo = await _shareContext.TestShareInfo.FirstOrDefaultAsync(x => x.testId == test.TestId, ct);
+        var shareInfo = await _shareContext.TestShareInfo.FirstOrDefaultAsync(x => x.TestId == test.TestId, ct);
         if (shareInfo is not null)
             return Ok(shareInfo.Id);
 
         // if not, try and add it.
-        shareInfo = new() { shared = true, testId = test.TestId, OwnerId = test.UserId };
+        shareInfo = new() { Shared = true, TestId = test.TestId, Test = test, OwnerId = test.UserId };
         _shareContext.TestShareInfo.Add(shareInfo);
 
         try {
@@ -77,7 +85,7 @@ public class ShareController: ControllerBase {
 
         // make sure that all of the user provided information adds up
         var share = await _shareContext.TestShareInfo.FirstOrDefaultAsync(x=>x.Id == shareId, ct);
-        if (share is null || !share.shared || share.OwnerId!=owner.Id || share.testId!=test.TestId)
+        if (share is null || !share.Shared || share.OwnerId!=owner.Id || share.TestId!=test.TestId)
             return NotFound();
         
         // add the test to the shared tests
