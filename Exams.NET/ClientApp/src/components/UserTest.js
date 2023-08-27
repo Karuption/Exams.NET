@@ -12,7 +12,7 @@ import {
    Label,
 } from "reactstrap";
 import { User } from "oidc-client";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 export default function UserTest() {
    const { id: testId } = useParams();
@@ -172,7 +172,9 @@ function UserTestView({ userTest, userAnswers, answerChange }) {
             </Card>
          ))}
          <div className={"d-flex flex-row-reverse px-3"}>
-            <Button className={"btn-primary"}>Submit</Button>
+            <Link to={"/portal"}>
+               <Button className={"btn-primary"}>Submit</Button>
+            </Link>
          </div>
       </div>
    );
