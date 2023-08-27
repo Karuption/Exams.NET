@@ -7,59 +7,121 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Exams.NET.Controllers.Modification; 
 
-[Route("api/admin/[controller]")]
-[ApiController]
+/// <summary>
+/// This is a controller for managing test questions
+/// Route: /api/admin/question
+/// </summary>
 [Authorize]
+[ApiController]
+[Route("api/admin/[controller]")]
 public class QuestionController : ControllerBase {
     private readonly TestAdministrationContext _context;
 
+    /// <summary>
+    /// This controller requires the Db context for managing questions
+    /// </summary>
+    /// <param name="context">Question management Db context</param>
     public QuestionController(TestAdministrationContext context) {
         _context = context;
     }
 
-    // GET: api/Question
+    
+    /// <summary>
+    /// Gets all the questions that the current user has created
+    /// Method: GET
+    /// Route: api/question
+    /// </summary>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>200 OK with a list of questions</returns>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TestQuestion>>> GetTestQuestions() {
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<TestQuestion>>> GetTestQuestions(CancellationToken ct = default) {
         return await _context.TestQuestions
                 .Where(x => x.CreatedBy == GetCurrentUserId())
-                .ToListAsync();
+                .ToListAsync(cancellationToken: ct);
     }
     
+    /// <summary>
+    /// Gets all of the test questions that do not have any tests associated with them
+    /// Method: GET
+    /// Route: api/question/{id}
+    /// </summary>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>200 OK with a list of questions</returns>
     [HttpGet]
     [Route("Unassigned")]
-    public async Task<ActionResult<IEnumerable<TestQuestion>>> GetUnassignedTestQuestions() {
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<TestQuestion>>> GetUnassignedTestQuestions(CancellationToken ct = default) {
         return await _context.TestQuestions
                              .Where(x => x.CreatedBy == GetCurrentUserId() && default == (x.TestId ?? default))
-                             .ToListAsync();
+                             .ToListAsync(cancellationToken: ct);
     }
 
-    // GET: api/Question/5
+    /// <summary>
+    /// Get a question by the id.
+    /// Method: GET
+    /// Route: api/question/{id}
+    /// </summary>
+    /// <param name="id">Id of the question to get</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>200 OK Question with the associated id or not found</returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<TestQuestion>> GetTestQuestion(int id) {
-        var question = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId());
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<TestQuestion>> GetTestQuestion(int id, CancellationToken ct = default) {
+        var question = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId(), cancellationToken: ct);
         if (question is null) 
             return NotFound();
 
         return question;
     }
-    
+
+
+    /// <summary>
+    /// Updates a multiple choice question.
+    /// Method: PUT
+    /// Route: api/question/MultipleChoice
+    /// </summary>
+    /// <param name="testQuestion">Question to update</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>201 created with location and question JSON or 500 Internal Server Error</returns>
     [HttpPut]
     [Route("MultipleChoice")]
-    public async Task<IActionResult> PutTestQuestion([FromBody]MultipleChoiceProblem testQuestion) {
-        return await UpdateQuestion(testQuestion);
-    }
-    
-    [HttpPut]
-    [Route("FreeForm")]
-    public async Task<IActionResult> PutTestQuestion([FromBody]FreeFormProblem testQuestion) {
-        return await UpdateQuestion(testQuestion);
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PutTestQuestion([FromBody]MultipleChoiceProblem testQuestion, CancellationToken ct = default) {
+        return await UpdateQuestion(testQuestion, ct);
     }
 
-    // POST: api/Question
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+    /// <summary>
+    /// Updates a multiple choice question.
+    /// Method: PUT
+    /// Route: api/question/FreeForm
+    /// </summary>
+    /// <param name="testQuestion">Question to update</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>201 created with location and question JSON or 500 Internal Server Error</returns>
+    [HttpPut]
+    [Route("FreeForm")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PutTestQuestion([FromBody]FreeFormProblem testQuestion, CancellationToken ct = default) {
+        return await UpdateQuestion(testQuestion, ct);
+    }
+    
+    /// <summary>
+    /// Creates a multiple choice question
+    /// Method: POST
+    /// Route: api/question/MultipleChoice
+    /// </summary>
+    /// <param name="testQuestion">Test question to create</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>201 created with location and JSON question or Internal Server Error</returns>
     [HttpPost]
     [Route("MultipleChoice")]
-    public async Task<ActionResult<TestQuestion>> PostTestQuestion(MultipleChoiceProblemDto testQuestion) {
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<TestQuestion>> PostTestQuestion(MultipleChoiceProblemDto testQuestion, CancellationToken ct = default) {
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
@@ -70,15 +132,31 @@ public class QuestionController : ControllerBase {
          }
         
         _context.MultipleChoiceQuestions.Add(mapped!);
-        
-        await _context.SaveChangesAsync();
+
+        try {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch  {
+            return Problem();
+        }
 
         return CreatedAtAction("GetTestQuestion", new { id = testQuestion.TestQuestionId }, testQuestion);
     }
     
+    /// <summary>
+    /// Creates a Free Form question
+    /// Method: POST
+    /// Route: api/question/FreeForm
+    /// </summary>
+    /// <param name="testQuestion">Test question to create</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>201 created with location and JSON question, bad request or Internal Server Error</returns>
     [HttpPost]
     [Route("FreeForm")]
-    public async Task<ActionResult<TestQuestion>> PostTestQuestion(FreeFormProblemDto testQuestion) {
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<TestQuestion>> PostTestQuestion(FreeFormProblemDto testQuestion, CancellationToken ct = default) {
         testQuestion.TestQuestionId = default;
         testQuestion.CreatedBy = GetCurrentUserId();
 
@@ -88,40 +166,55 @@ public class QuestionController : ControllerBase {
         
         _context.FreeFormQuestions.Add(ffp);
         try {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
         }
         catch {
-            BadRequest();
+            Problem();
         }
 
         return CreatedAtAction("GetTestQuestion", new { id = testQuestion.TestQuestionId }, testQuestion);
     }
-
-    // DELETE: api/Question/5
+    
+    /// <summary>
+    /// Deletes the question with {id}
+    /// Method: DELETE
+    /// Route: api/question/{id}
+    /// </summary>
+    /// <param name="id">id of the question to delete</param>
+    /// <param name="ct">Cancellation Token</param>
+    /// <returns>No content if it has been deleted, Not found or Internal Error</returns>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTestQuestion(int id) {
-        var testQuestion = await _context.TestQuestions.FindAsync(id);
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> DeleteTestQuestion(int id, CancellationToken ct = default) {
+        var testQuestion = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id, ct);
         if (testQuestion == null)
             return NotFound();
 
         _context.TestQuestions.Remove(testQuestion);
-        await _context.SaveChangesAsync();
+        try {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch {
+            Problem();
+        }
 
         return NoContent();
     }
 
-    private async Task<IActionResult> UpdateQuestion(TestQuestion testQuestion) {
+    private async Task<IActionResult> UpdateQuestion(TestQuestion testQuestion,CancellationToken ct = default) {
         if (testQuestion.TestQuestionId == default)
             return BadRequest();
         
-        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion.TestQuestionId);
+        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion.TestQuestionId, cancellationToken: ct);
         if (orig is null)
             return NotFound();
         
         _context.Entry(orig).CurrentValues.SetValues(testQuestion);
 
         try { 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
         }
         catch (DbUpdateConcurrencyException) {
             if (!TestQuestionExists(testQuestion.TestQuestionId))
