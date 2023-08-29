@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
+using Exams.NET.Providers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,7 @@ public class ShareController: ControllerBase {
     private readonly TestSharingContext _shareContext;
     private readonly TestAdministrationContext _testContext;
     private readonly ApplicationDbContext _userContext;
+    private readonly IUserIdProvider _idProvider;
     
     /// <summary>
     /// This controller gets information about tests and how they are shared
@@ -24,10 +26,11 @@ public class ShareController: ControllerBase {
     /// <param name="shareContext">Context for how the tests are shared</param>
     /// <param name="userContext">Context for Application users</param>
     /// <param name="testContext">Context for tests</param>
-    public ShareController(TestSharingContext shareContext, ApplicationDbContext userContext, TestAdministrationContext testContext) {
+    public ShareController(TestSharingContext shareContext, ApplicationDbContext userContext, TestAdministrationContext testContext, IUserIdProvider idProvider) {
         _shareContext = shareContext;
         _userContext = userContext;
         _testContext = testContext;
+        _idProvider = idProvider;
     }
 
     /// <summary>
@@ -154,7 +157,7 @@ public class ShareController: ControllerBase {
     }
     
     private string GetCurrentUserId() {
-        return HttpContext.User.Claims.FirstOrDefault(c=>c.Type == ClaimTypes.NameIdentifier)?.Value ?? "";
+        return _idProvider.GetCurrentUserId(HttpContext);
     }
 
 }

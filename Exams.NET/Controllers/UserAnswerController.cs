@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
+using Exams.NET.Providers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,15 @@ namespace Exams.NET.Controllers;
 [Route("api/[controller]")]
 public class UserAnswerController : Controller {
     private readonly TestAdministrationContext _context;
+    private readonly IUserIdProvider _idProvider;
+    
     /// <summary>
     /// This controller is used to mutate user answers to test questions.
     /// </summary>
     /// <param name="context">Db context with access to tests and user answers</param>
-    public UserAnswerController(TestAdministrationContext context) {
+    public UserAnswerController(TestAdministrationContext context, IUserIdProvider idProvider) {
         _context = context;
+        _idProvider = idProvider;
     }
 
     /// <summary>
@@ -160,9 +164,9 @@ public class UserAnswerController : Controller {
 
         return CreatedAtAction("GetAnswer", new { id = userTestQuestionAnswer.Id }, userTestQuestionAnswer);
     }
-    
+
     private string GetCurrentUserId() {
-        return HttpContext.User.Claims.FirstOrDefault(c=>c.Type == ClaimTypes.NameIdentifier)?.Value ?? "";
+        return _idProvider.GetCurrentUserId(HttpContext);
     }
 
 }

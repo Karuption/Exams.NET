@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Exams.NET.Data;
 using Exams.NET.Models;
+using Exams.NET.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,8 @@ builder.Services.AddIdentityServer()
 
 builder.Services.AddAuthentication()
        .AddIdentityServerJwt();
+
+builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();

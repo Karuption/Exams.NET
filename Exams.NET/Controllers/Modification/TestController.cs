@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
+using Exams.NET.Providers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,13 +17,15 @@ namespace Exams.NET.Controllers.Modification;
 [Route("api/admin/[controller]")]
 public class TestController : ControllerBase {
     private readonly TestAdministrationContext _testContext;
-
+    private readonly IUserIdProvider _idProvider;
+    
     /// <summary>
     /// The test controller requires the test administration db context.
     /// </summary>
     /// <param name="testContext">Db context to administer tests</param>
-    public TestController(TestAdministrationContext testContext) {
+    public TestController(TestAdministrationContext testContext, IUserIdProvider idProvider) {
         _testContext = testContext;
+        _idProvider = idProvider;
     }
 
     /// <summary>
@@ -200,6 +203,6 @@ public class TestController : ControllerBase {
         return _testContext.Tests.Any(e => e.TestId == id);
     }
     private string GetCurrentUserId() {
-        return HttpContext.User.Claims.FirstOrDefault(c=>c.Type == ClaimTypes.NameIdentifier)?.Value ?? "";
+        return _idProvider.GetCurrentUserId(this.HttpContext);
     }
 }

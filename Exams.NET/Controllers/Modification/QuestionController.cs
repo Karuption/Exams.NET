@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Exams.NET.Data;
 using Exams.NET.Models;
+using Exams.NET.Providers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +17,17 @@ namespace Exams.NET.Controllers.Modification;
 [Route("api/admin/[controller]")]
 public class QuestionController : ControllerBase {
     private readonly TestAdministrationContext _context;
+    private readonly IUserIdProvider _idProvider;
 
     /// <summary>
     /// This controller requires the Db context for managing questions
     /// </summary>
     /// <param name="context">Question management Db context</param>
-    public QuestionController(TestAdministrationContext context) {
+    /// <param name="idProvider">This is to provide code with the userID. This abstraction is meant to make testing easier</param>
+    public QuestionController(TestAdministrationContext context, IUserIdProvider idProvider) {
         _context = context;
+        _idProvider = idProvider;
     }
-
     
     /// <summary>
     /// Gets all the questions that the current user has created
@@ -230,6 +233,6 @@ public class QuestionController : ControllerBase {
     }
     
     private string GetCurrentUserId() {
-        return HttpContext.User.Claims.FirstOrDefault(c=>c.Type == ClaimTypes.NameIdentifier)?.Value ?? "";
+        return _idProvider.GetCurrentUserId(this.HttpContext);
     }
 }
