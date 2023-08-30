@@ -37,7 +37,8 @@ public class TestController : ControllerBase {
     /// <returns>An IEnumerable of Tests that can be modified</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken cancellationToken = default) {
+    
+public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken cancellationToken = default) {
         var tests = _testContext.Tests.Where(x=> x.UserId == GetCurrentUserId())
                                 .Include(x=>x.Problems);
 
@@ -46,7 +47,6 @@ public class TestController : ControllerBase {
 
         return Array.Empty<Test>();
     }
-
     /// <summary>
     /// Gets a specific test based on the id of the test in the route.
     /// Method: GET
