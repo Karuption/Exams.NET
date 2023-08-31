@@ -70,7 +70,7 @@ public class QuestionController : ControllerBase {
     /// <returns>200 OK Question with the associated id or not found</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TestQuestion>> GetTestQuestion(int id, CancellationToken ct = default) {
         var question = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId(), cancellationToken: ct);
         if (question is null) 
