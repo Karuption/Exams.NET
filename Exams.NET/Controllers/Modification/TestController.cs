@@ -191,7 +191,7 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteTest(int id, CancellationToken cancellationToken = default) {
+    public async Task<ActionResult> DeleteTest(int id, CancellationToken cancellationToken = default) {
         if (id == default)
             return NotFound();
         

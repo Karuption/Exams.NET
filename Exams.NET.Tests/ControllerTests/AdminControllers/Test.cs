@@ -153,6 +153,8 @@ public class Test {
         Assert.IsAssignableFrom<NotFoundResult>(actual);
     }
     
+    // add and remove problems with PUT
+    
     [Fact]
     public async Task MismatchedIdsReturnBadRequest() {
         var sut = new TestController(_testContext, _idProvider);
@@ -190,5 +192,30 @@ public class Test {
         Assert.Null(_testContext.Tests.FirstOrDefault(x=>x.UserId == fakeId));
     }
     //delete{id}
+    [Fact]
+    public async Task CanDeleteOwnTests() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
+
+        var actual = await sut.DeleteTest(test.TestId);
+
+        Assert.IsAssignableFrom<NoContentResult>(actual);
+    }
     
+    [Fact]
+    public async Task CannotDeleteOtherTests() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _testContext.Tests.AsNoTracking().First(x=>x.UserId!=userId);
+
+        var actual = await sut.DeleteTest(test.TestId);
+
+        Assert.IsAssignableFrom<NotFoundResult>(actual);
+    }
+
 }
