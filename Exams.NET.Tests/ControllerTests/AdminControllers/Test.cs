@@ -1,5 +1,6 @@
 using System.ComponentModel.Design;
 using System.Net;
+using Duende.IdentityServer.Extensions;
 using Exams.NET.Controllers.Modification;
 using Exams.NET.Data;
 using Exams.NET.Providers;
@@ -47,7 +48,7 @@ public class Test {
         var actual = await sut.GetTests();
         
         //assert
-        Assert.True(actual?.Value?.Count() == _tests.Count(x => x.UserId == id));
+        Assert.True(actual?.Value?.Count() == _testContext.Tests.Count(x => x.UserId == id));
     }
     
     [Fact]
@@ -68,9 +69,9 @@ public class Test {
 
         var sut = new TestController(_testContext, _idProvider);
 
-        var actual = sut.GetTest(-1);
+        var actual = await sut.GetTest(-1);
 
-        Assert.IsAssignableFrom<NotFoundResult>(actual?.Result?.Result);
+        Assert.IsAssignableFrom<NotFoundResult>(actual.Result);
     }
     
     //get{id}
@@ -80,9 +81,9 @@ public class Test {
 
         var sut = new TestController(_testContext, _idProvider);
 
-        var actual = sut.GetTest(1);
+        var actual = await sut.GetTest(1);
 
-        Assert.True(actual.Result?.Value?.TestId == 1);
+        Assert.True(actual.Value?.TestId == 1);
     }
     //get{id}
     [Fact]
@@ -91,13 +92,103 @@ public class Test {
 
         var sut = new TestController(_testContext, _idProvider);
 
-        var actual = sut.GetTest(1);
+        var actual = await sut.GetTest(1);
 
-        Assert.IsAssignableFrom<NotFoundResult>(actual.Result?.Result);
+        Assert.IsAssignableFrom<NotFoundResult>(actual.Result);
+    }
+    
+    [Fact]
+    public async Task ReturnsNotFoundWhenSearchingForANonexistentTest() {
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("1");
+
+        var sut = new TestController(_testContext, _idProvider);
+
+        var actual = await sut.GetTest(-1);
+
+        Assert.IsAssignableFrom<NotFoundResult>(actual.Result);
     }
     //put{id}
-    //put
+    [Fact]
+    public async Task UserCanUpdateOwnTests() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
+        var expected = Guid.NewGuid().ToString();
+        test.TestDescription = expected;
+        
+        var returnCode = await sut.PutTest(test.TestId, test);
+        var actual = _testContext.Tests.First(x => x.TestId == test.TestId);
+        
+        
+        Assert.IsNotType<NotFoundResult>(returnCode);
+        Assert.True(actual.TestDescription == expected);
+    }
+    
+    [Fact]
+    public async Task CannotCreateWithPut() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
+        test.TestId = -1;
+        
+        var actual = await sut.PutTest(test.TestId, test);
+        
+        Assert.IsAssignableFrom<NotFoundResult>(actual);
+    }
+    
+    [Fact]
+    public async Task CannotEditAnotherUsersTest() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _testContext.Tests.AsNoTracking().First(x => x.UserId != userId);
+        
+        var actual = await sut.PutTest(test.TestId, test);
+        
+        Assert.IsAssignableFrom<NotFoundResult>(actual);
+    }
+    
+    [Fact]
+    public async Task MismatchedIdsReturnBadRequest() {
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _tests[0];
+        
+        var actual = await sut.PutTest(-1, test);
+        
+        Assert.IsAssignableFrom<BadRequestResult>(actual);
+    }
+    
+    [Fact]
+    public async Task DefaultIdReturnsBadRequest() {
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _tests[0];
+        test.TestId = 0;
+        
+        var actual = await sut.PutTest(0, test);
+        
+        Assert.IsAssignableFrom<BadRequestResult>(actual);
+    }
     //post
+    [Fact]
+    public async Task CannotCreateWithMismatchedUser() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider);
+        var test = _testContext.Tests.AsNoTracking().First(_ => true);
+        var fakeId = Guid.NewGuid().ToString();
+        test.UserId = fakeId;
+        
+        var actual = await sut.PostTest(test.ToCreationDto());
+
+        Assert.IsAssignableFrom<CreatedAtActionResult>(actual.Result);
+        Assert.Null(_testContext.Tests.FirstOrDefault(x=>x.UserId == fakeId));
+    }
     //delete{id}
     
 }

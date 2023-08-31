@@ -5,6 +5,7 @@ namespace Exams.NET.Models;
 [Mapper(UseDeepCloning = true)]
 public static partial class TestMapper {
     public static partial Test ToEntity(this TestCreationDto testCreation);
+    public static partial TestCreationDto ToCreationDto(this Test testCreation);
 
     public static partial UserTest ToUser(this Test test);
     
