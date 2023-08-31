@@ -82,8 +82,11 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>Bad Request, 204 No Content or, 404</returns>
     [HttpPut("{id}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PutTest(int id, Test test, CancellationToken cancellationToken = default) {
-        if (id != test.TestId)
+        if (id != test.TestId || id == default)
             return BadRequest();
 
         var orig = await _testContext.Tests.Include(x=>x.Problems).FirstOrDefaultAsync(x=> x.TestId==test.TestId && 
@@ -94,9 +97,9 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
         test.LastUpdated = DateTime.UtcNow;
         _testContext.Entry(orig).CurrentValues.SetValues(test);
         
-        var problemsToRemove = orig.Problems?.Where(problem => test.Problems!.Any(updatedProblem => updatedProblem.TestQuestionId == problem.TestQuestionId)).ToList();
+        var problemsToRemove = orig.Problems?.Where(problem => test.Problems?.Any(updatedProblem => updatedProblem.TestQuestionId == problem.TestQuestionId)??false).ToArray();
     
-        foreach (var problemToRemove in problemsToRemove!)
+        foreach (var problemToRemove in problemsToRemove ?? Array.Empty<TestQuestion>())
         {
             var trackedProblem = await _testContext.TestQuestions.FirstOrDefaultAsync(x => x.TestQuestionId == problemToRemove.TestQuestionId, cancellationToken: cancellationToken);
             if(trackedProblem is null)
@@ -107,7 +110,7 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
             orig.Problems?.Remove(trackedProblem);
         }
 
-        foreach (var updatedProblem in test.Problems!) {
+        foreach (var updatedProblem in test.Problems ?? Array.Empty<TestQuestion>()) {
             var existingProblem = orig.Problems?.FirstOrDefault(problem => problem.TestQuestionId == updatedProblem.TestQuestionId);
             if (existingProblem is null) {
                 var trackedProblem = await _testContext.TestQuestions.FirstOrDefaultAsync(x => x.TestQuestionId == updatedProblem.TestQuestionId, cancellationToken: cancellationToken) ?? updatedProblem;
@@ -144,6 +147,9 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>Bad Request, 204 No Content or, 404</returns>
     [HttpPut]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> PutTest(Test test, CancellationToken cancellationToken = default) {
         return await PutTest(test.TestId, test, cancellationToken);
     }
@@ -159,6 +165,7 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<Test>> PostTest(TestCreationDto testCreation, CancellationToken cancellationToken = default) {
+        testCreation.TestId = default;
         testCreation.UserId = GetCurrentUserId();
         testCreation.LastUpdated = testCreation.Created = DateTime.UtcNow;
         
@@ -167,7 +174,7 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
             await _testContext.SaveChangesAsync(cancellationToken);
         }
         catch {
-            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            return Problem();
         }
 
         return CreatedAtAction("GetTest", new { id = testCreation.TestId }, testCreation);
