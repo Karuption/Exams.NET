@@ -242,4 +242,52 @@ public class Question {
         Assert.IsAssignableFrom<NoContentResult>(ffpResult);
     }
     //delete{id}
+    [Fact]
+    public async Task CanDeleteOwnTest() {
+        var mcq = await _testContext.MultipleChoiceQuestions.FirstAsync();
+        var ffp = await _testContext.FreeFormQuestions.FirstAsync();
+        var totalCount = await _testContext.TestQuestions.CountAsync();
+
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(mcq.CreatedBy, ffp.CreatedBy);
+        
+        var sut = new QuestionController(_testContext, _idProvider);
+        
+        var mcqResult = await sut.DeleteTestQuestion(mcq.TestQuestionId);
+        var ffpResult = await sut.DeleteTestQuestion(ffp.TestQuestionId);
+
+        Assert.IsAssignableFrom<NoContentResult>(mcqResult);
+        Assert.IsAssignableFrom<NoContentResult>(ffpResult);
+        
+        Assert.Equal(totalCount - 2, _testContext.TestQuestions.Count());
+    }
+    
+    [Fact]
+    public async Task BadQuestionIdReturnsNotFound() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+        
+        var sut = new QuestionController(_testContext, _idProvider);
+        
+        var mcqResult = await sut.DeleteTestQuestion(-1);
+        var ffpResult = await sut.DeleteTestQuestion(-1);
+
+        Assert.IsAssignableFrom<NotFoundResult>(mcqResult);
+        Assert.IsAssignableFrom<NotFoundResult>(ffpResult);
+    }
+    
+    [Fact]
+    public async Task BadUserIdReturnsNotFound() {
+        var mcq = await _testContext.MultipleChoiceQuestions.FirstAsync();
+        var ffp = await _testContext.FreeFormQuestions.FirstAsync();
+
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("_");
+        
+        var sut = new QuestionController(_testContext, _idProvider);
+        
+        var mcqResult = await sut.DeleteTestQuestion(mcq.TestQuestionId);
+        var ffpResult = await sut.DeleteTestQuestion(ffp.TestQuestionId);
+
+        Assert.IsAssignableFrom<NotFoundResult>(mcqResult);
+        Assert.IsAssignableFrom<NotFoundResult>(ffpResult);
+    }
 }
