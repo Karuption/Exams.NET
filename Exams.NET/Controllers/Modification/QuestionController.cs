@@ -191,7 +191,7 @@ public class QuestionController : ControllerBase {
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteTestQuestion(int id, CancellationToken ct = default) {
-        var testQuestion = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id, ct);
+        var testQuestion = await _context.TestQuestions.FirstOrDefaultAsync(x=>x.TestQuestionId == id && x.CreatedBy == GetCurrentUserId(), ct);
         if (testQuestion == null)
             return NotFound();
 
@@ -210,7 +210,8 @@ public class QuestionController : ControllerBase {
         if (testQuestion.TestQuestionId == default)
             return BadRequest();
         
-        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion.TestQuestionId, cancellationToken: ct);
+        var orig = await _context.TestQuestions.FirstOrDefaultAsync(x=> x.TestQuestionId==testQuestion.TestQuestionId && 
+                                                                        x.CreatedBy == GetCurrentUserId(), cancellationToken: ct);
         if (orig is null)
             return NotFound();
         

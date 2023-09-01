@@ -28,8 +28,8 @@ public class Question {
     }
 
     private List<TestQuestion> _testQuestions = new() {
-        new TestQuestion() { TestQuestionId = 1, CreatedBy = "1" },
-        new() { TestQuestionId = 2, CreatedBy = "2" },
+        new MultipleChoiceProblem() { TestQuestionId = 1, CreatedBy = "1" },
+        new FreeFormProblem() { TestQuestionId = 2, CreatedBy = "2" },
         new() { TestQuestionId = 3, CreatedBy = "1" },
         new() { TestQuestionId = 4, CreatedBy = "3" },
     };
@@ -129,8 +129,117 @@ public class Question {
         
         Assert.True(newQuestions?.Value?.Count() == 0);
     }
-    //post multiple choice
-    //post free-answer
-    //put{id} Multi
+    //post
+    [Fact]
+    public async Task FreeFormQuestionAddedOnPost() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var count = _testContext.TestQuestions.Count();
+        var sut = new QuestionController(_testContext, _idProvider);
+
+        await sut.PostTestQuestion(new FreeFormProblemDto() {});
+
+        Assert.True(_testContext.TestQuestions.Count() == count + 1);
+    }
+    [Fact]
+    public async Task MultipleChoiceQuestionAddedOnPost() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var count = _testContext.TestQuestions.Count();
+        var sut = new QuestionController(_testContext, _idProvider);
+
+        await sut.PostTestQuestion(new MultipleChoiceProblemDto() {});
+
+        Assert.True(_testContext.TestQuestions.Count() == count + 1);
+    }
+    [Fact]
+    public async Task MultipleChoiceQuestionWithChoicesAdded() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var count = _testContext.TestQuestions.Count();
+        var sut = new QuestionController(_testContext, _idProvider);
+
+        var mcq = new MultipleChoiceProblemDto()
+            { 
+                Prompt = Guid.NewGuid().ToString(),
+                Choices = new List<ChoiceDto>() { 
+                    new () { 
+                        Description = "null"
+                    }, new () {
+                        Description = "null"
+                    }, new ChoiceDto {
+                        Description = "null"
+                    }
+                }
+            };
+        
+        await sut.PostTestQuestion(mcq);
+
+        var actual = await _testContext.TestQuestions.FirstAsync(x => x.Prompt == mcq.Prompt);
+
+        Assert.IsAssignableFrom<MultipleChoiceProblem>(actual);
+        Assert.True(((MultipleChoiceProblem)actual)?.Choices?.Count == mcq.Choices.Count);
+    }
+    //put{id} Multi and free
+    [Fact]
+    public async Task IdDefaultErrors() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+        
+        var sut = new QuestionController(_testContext, _idProvider);
+        var ffp = await sut.PutTestQuestion(new FreeFormProblem());
+        var mcq = await sut.PutTestQuestion(new MultipleChoiceProblem());
+
+        Assert.IsAssignableFrom<BadRequestResult>(ffp);
+        Assert.IsAssignableFrom<BadRequestResult>(mcq);
+    }
+
+    [Fact]
+    public async Task BadTestQuestionIdErrors() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new QuestionController(_testContext, _idProvider);
+        var ffp = await sut.PutTestQuestion(new FreeFormProblem() { TestQuestionId = -1 });
+        var mcq = await sut.PutTestQuestion(new MultipleChoiceProblem(){TestQuestionId = -1});
+
+        Assert.IsAssignableFrom<NotFoundResult>(ffp);
+        Assert.IsAssignableFrom<NotFoundResult>(mcq);
+    }
+    
+    [Fact]
+    public async Task BadUserIdErrors() {
+        var userId = "-";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new QuestionController(_testContext, _idProvider);
+        var mcq = await _testContext.MultipleChoiceQuestions.FirstAsync();
+        var ffp = await _testContext.FreeFormQuestions.FirstAsync();
+        
+        var ffpResult = await sut.PutTestQuestion(ffp);
+        var mcqResult = await sut.PutTestQuestion(mcq);
+
+        Assert.IsAssignableFrom<NotFoundResult>(ffpResult);
+        Assert.IsAssignableFrom<NotFoundResult>(mcqResult);
+    }
+    
+    [Fact]
+    public async Task TestsUpdated() {
+        var mcq = await _testContext.MultipleChoiceQuestions.FirstAsync();
+        var ffp = await _testContext.MultipleChoiceQuestions.FirstAsync();
+
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(mcq.CreatedBy, ffp.CreatedBy);
+        
+        var sut = new QuestionController(_testContext, _idProvider);
+        
+        var mcqResult = await sut.PutTestQuestion(mcq);
+        var ffpResult = await sut.PutTestQuestion(ffp);
+
+        Assert.IsAssignableFrom<NoContentResult>(mcqResult);
+        Assert.IsAssignableFrom<NoContentResult>(ffpResult);
+    }
     //delete{id}
 }
