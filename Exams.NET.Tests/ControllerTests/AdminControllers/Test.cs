@@ -1,12 +1,9 @@
-using System.ComponentModel.Design;
-using System.Net;
-using Duende.IdentityServer.Extensions;
 using Exams.NET.Controllers.Modification;
 using Exams.NET.Data;
 using Exams.NET.Providers;
 using Exams.NET.Models;
+using Exams.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -15,24 +12,16 @@ using NSubstitute.ClearExtensions;
 namespace Exams.NET.Tests.ControllerTests.AdminControllers; 
 
 public class Test {
-    private TestAdministrationContext _testContext;
-    private IUserIdProvider _idProvider;
+    private readonly TestAdministrationContext _testContext;
+    private readonly IUserIdProvider _idProvider = Substitute.For<IUserIdProvider>();
+    private TestSharingContext _sharingContext = EfHelpers.ContextSetup<TestSharingContext>();
     public Test() {
-        var options = new DbContextOptionsBuilder<TestAdministrationContext>()
-                      .UseInMemoryDatabase("fakeDb")
-                      .Options;
-
-        _testContext = new TestAdministrationContext(options);
-        
-        _testContext.Database.EnsureDeleted();
-        _testContext.Database.EnsureCreated();
-        
+        _testContext = EfHelpers.ContextSetup<TestAdministrationContext>();
         _testContext.Tests.AddRange(_tests);
         _testContext.SaveChanges();
-        _idProvider = Substitute.For<IUserIdProvider>();
     }
     
-    private List<Exams.NET.Models.Test> _tests = new() {
+    private readonly List<Exams.NET.Models.Test> _tests = new() {
         new(){TestId = 1,UserId = "1"}, new(){TestId = 2, UserId = "2"}, new Models.Test() {TestId = 3,UserId = "1"},
     };
     

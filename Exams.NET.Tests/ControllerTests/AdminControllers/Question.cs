@@ -2,6 +2,7 @@ using Exams.NET.Controllers.Modification;
 using Exams.NET.Data;
 using Exams.NET.Models;
 using Exams.NET.Providers;
+using Exams.NET.Tests.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,19 +11,10 @@ using NSubstitute;
 namespace Exams.NET.Tests.ControllerTests.AdminControllers; 
 
 public class Question {
-    private readonly IUserIdProvider _idProvider;
+    private readonly IUserIdProvider _idProvider = Substitute.For<IUserIdProvider>();
     private readonly TestAdministrationContext _testContext;
     public Question() {
-        _idProvider = Substitute.For<IUserIdProvider>();
-
-        var options = new DbContextOptionsBuilder<TestAdministrationContext>()
-            .UseInMemoryDatabase("fakeDb")
-            .EnableSensitiveDataLogging()
-            .Options;
-        
-        _testContext = new TestAdministrationContext(options);
-        _testContext.Database.EnsureDeleted();
-        _testContext.Database.EnsureCreated();
+        _testContext = EfHelpers.ContextSetup<TestAdministrationContext>();
         _testContext.TestQuestions.AddRange(_testQuestions);
         _testContext.SaveChanges();
     }
