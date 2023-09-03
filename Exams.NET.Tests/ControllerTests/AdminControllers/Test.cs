@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
-using NSubstitute.ClearExtensions;
 
 namespace Exams.NET.Tests.ControllerTests.AdminControllers; 
 
@@ -32,7 +31,7 @@ public class Test {
     public async Task GetsTestsCreatedByUser(string id) {
         // arrange 
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(id);
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         
         var actual = await sut.GetTests();
         
@@ -44,7 +43,7 @@ public class Test {
     public async Task ReturnEmptyListIfNotFound() {
         // arrange 
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("-");
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         
         var actual = await sut.GetTests();
         
@@ -56,7 +55,7 @@ public class Test {
     public async Task ReturnsNotFoundWhenGetByIdFails() {
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("-");
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
 
         var actual = await sut.GetTest(-1);
 
@@ -68,7 +67,7 @@ public class Test {
     public async Task ReturnsTestWithCorrectId() {
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("1");
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
 
         var actual = await sut.GetTest(1);
 
@@ -79,7 +78,7 @@ public class Test {
     public async Task ReturnsNotFoundWhenSearchingForAnotherUsersTest() {
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("-");
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
 
         var actual = await sut.GetTest(1);
 
@@ -90,7 +89,7 @@ public class Test {
     public async Task ReturnsNotFoundWhenSearchingForANonexistentTest() {
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns("1");
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
 
         var actual = await sut.GetTest(-1);
 
@@ -102,7 +101,7 @@ public class Test {
         var userId = "1";
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
         var expected = Guid.NewGuid().ToString();
         test.TestDescription = expected;
@@ -120,7 +119,7 @@ public class Test {
         var userId = "1";
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
         test.TestId = -1;
         
@@ -134,7 +133,7 @@ public class Test {
         var userId = "1";
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _testContext.Tests.AsNoTracking().First(x => x.UserId != userId);
         
         var actual = await sut.PutTest(test.TestId, test);
@@ -146,7 +145,7 @@ public class Test {
     
     [Fact]
     public async Task MismatchedIdsReturnBadRequest() {
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _tests[0];
         
         var actual = await sut.PutTest(-1, test);
@@ -156,7 +155,7 @@ public class Test {
     
     [Fact]
     public async Task DefaultIdReturnsBadRequest() {
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _tests[0];
         test.TestId = 0;
         
@@ -170,7 +169,7 @@ public class Test {
         var userId = "1";
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _testContext.Tests.AsNoTracking().First(_ => true);
         var fakeId = Guid.NewGuid().ToString();
         test.UserId = fakeId;
@@ -186,7 +185,7 @@ public class Test {
         var userId = "1";
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
 
         var actual = await sut.DeleteTest(test.TestId);
@@ -199,12 +198,33 @@ public class Test {
         var userId = "1";
         _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
 
-        var sut = new TestController(_testContext, _idProvider);
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
         var test = _testContext.Tests.AsNoTracking().First(x=>x.UserId!=userId);
 
         var actual = await sut.DeleteTest(test.TestId);
 
         Assert.IsAssignableFrom<NotFoundResult>(actual);
+    }
+
+    [Fact]
+    public async Task CanDeleteSharedTest() {
+        var userId = "1";
+        _idProvider.GetCurrentUserId(Arg.Any<HttpContext>()).Returns(userId);
+
+        var sut = new TestController(_testContext, _idProvider, _sharingContext);
+        var test = _testContext.Tests.AsNoTracking().First(x => x.UserId == userId);
+
+        var sharedTest = new SharedTest() { TestId = test.TestId, Shared = true, OwnerId = userId };
+        await _sharingContext.TestShareInfo.AddAsync(sharedTest);
+        var userShare = new TestShare() { SharedTest = sharedTest, AllowedUserId = userId, Id = Guid.NewGuid()};
+        await _sharingContext.TestShares.AddAsync(userShare);
+        await _sharingContext.SaveChangesAsync();
+        
+        var actual = await sut.DeleteTest(test.TestId);
+
+        Assert.IsAssignableFrom<NoContentResult>(actual);
+        Assert.True(!_sharingContext.TestShareInfo.Any(x => x.TestId == sharedTest.TestId));
+        Assert.True(!_sharingContext.TestShares.Any(x=>x.Id==userShare.Id));
     }
 
 }

@@ -43,10 +43,13 @@ public class ShareController: ControllerBase {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Test>>> GetSharedTests(CancellationToken ct = default) {
-         return await _shareContext.TestShares.Include(x=>x.SharedTest.Test)
+         var testIdsToShare = await _shareContext.TestShares.AsNoTracking()
+                                          .Include(x=>x.SharedTest)
                                           .Where(x => x.AllowedUserId == GetCurrentUserId() && x.SharedTest.Shared)
-                                          .Select(x=>x.SharedTest.Test)
-                                          .ToListAsync(ct);
+                                          .Select(x=>x.SharedTest.TestId)
+                                          .ToArrayAsync(ct);
+
+         return await _testContext.Tests.Where(x => testIdsToShare.Contains(x.TestId)).ToListAsync(cancellationToken: ct);
     }
     
     /// <summary>
@@ -97,7 +100,7 @@ public class ShareController: ControllerBase {
             return Ok(shareInfo.Id);
 
         // if not, try and add it.
-        shareInfo = new() { Shared = true, TestId = test.TestId, Test = test, OwnerId = test.UserId };
+        shareInfo = new() { Shared = true, TestId = test.TestId, OwnerId = test.UserId };
         await _shareContext.TestShareInfo.AddAsync(shareInfo, ct);
 
         try {

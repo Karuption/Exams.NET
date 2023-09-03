@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Exams.NET.Models;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.EntityFrameworkCore;
@@ -23,10 +25,10 @@ public class TestShare {
 }
 
 public class SharedTest {
+    [Key]
     public Guid Id { get; set; }
     public int TestId { get; set; }
     [JsonIgnore]
-    public Test Test { get; set; }
     public string OwnerId { get; set; }
     public bool Shared { get; set; }
 }

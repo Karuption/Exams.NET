@@ -18,14 +18,16 @@ namespace Exams.NET.Controllers.Modification;
 public class TestController : ControllerBase {
     private readonly TestAdministrationContext _testContext;
     private readonly IUserIdProvider _idProvider;
+    private readonly TestSharingContext _sharingContext;
     
     /// <summary>
     /// The test controller requires the test administration db context.
     /// </summary>
     /// <param name="testContext">Db context to administer tests</param>
-    public TestController(TestAdministrationContext testContext, IUserIdProvider idProvider) {
+    public TestController(TestAdministrationContext testContext, IUserIdProvider idProvider, TestSharingContext sharingContext) {
         _testContext = testContext;
         _idProvider = idProvider;
+        _sharingContext = sharingContext;
     }
 
     /// <summary>
@@ -197,8 +199,18 @@ public async Task<ActionResult<IEnumerable<Test>>> GetTests(CancellationToken ca
         
         var test = await _testContext.Tests.FirstOrDefaultAsync(x=> x.TestId==id 
                                                                     && x.UserId == GetCurrentUserId(), cancellationToken: cancellationToken);
-        if (test == null)
+        if (test is null)
             return NotFound();
+
+        var sharingInfo = await _sharingContext.TestShareInfo.Where(x => x.TestId == test.TestId)
+                                               .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+        if (sharingInfo is not null) {
+            _sharingContext.TestShareInfo.Remove(sharingInfo);
+            var sharedTo = _sharingContext.TestShares.Include(x => x.SharedTest).Where(x => x.SharedTest.TestId == test.TestId);
+            _sharingContext.TestShares.RemoveRange(sharedTo);
+        }
+
+        await _sharingContext.SaveChangesAsync(cancellationToken);
 
         _testContext.Tests.Remove(test);
         await _testContext.SaveChangesAsync(cancellationToken);
